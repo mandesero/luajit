@@ -1,5 +1,22 @@
 local M = {}
 
+function M.file_exists(fname)
+  local fh = io.open(fname, 'r')
+  return fh and io.close(fh)
+end
+
+function M.basedir(path)
+  -- The pattern matching is greedy, so we match
+  -- until the last separator.
+  return path:match('(.*[/\\])') or './'
+end
+
+function M.basename(path)
+  -- The pattern matching is greedy, so we match
+  -- until the last separator.
+  return path:match('[^/]*$')
+end
+
 function M.profilename(name)
   local vardir = os.getenv('LUAJIT_TEST_VARDIR')
   -- Replace pattern will change directory name of the generated
