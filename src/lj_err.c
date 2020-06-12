@@ -483,17 +483,10 @@ void lj_err_verify(void)
 #if !LJ_TARGET_OSX
   /* Check disabled on MacOS due to brilliant software engineering at Apple. */
   struct dwarf_eh_bases ehb;
-  /*
-  ** FIXME: The following assertions were replaced with
-  ** the conventional `lua_assert` ones.
-  **
-  ** lj_assertX(_Unwind_Find_FDE((void *)lj_err_throw, &ehb), "broken build: external frame unwinding enabled, but missing -funwind-tables");
-  ** lj_assertX(_Unwind_Find_FDE((void *)_Unwind_RaiseException, &ehb), "broken build: external frame unwinding enabled, but system libraries have no unwind tables");
-  */
-  lua_assert(_Unwind_Find_FDE((void *)lj_err_throw, &ehb));
+  lj_assertX(_Unwind_Find_FDE((void *)lj_err_throw, &ehb), "broken build: external frame unwinding enabled, but missing -funwind-tables");
 #endif
   /* Check disabled, because of broken Fedora/ARM64. See #722.
-  lua_assert(_Unwind_Find_FDE((void *)_Unwind_RaiseException, &ehb));
+  lj_assertX(_Unwind_Find_FDE((void *)_Unwind_RaiseException, &ehb), "broken build: external frame unwinding enabled, but system libraries have no unwind tables");
   */
 }
 #endif
@@ -514,13 +507,7 @@ static int err_unwind_jit(int version, int actions,
     ExitNo exitno;
     uintptr_t addr = _Unwind_GetIP(ctx);  /* Return address _after_ call. */
     uintptr_t stub = lj_trace_unwind(G2J(g), addr - sizeof(MCode), &exitno);
-    /*
-    ** FIXME: The following assert was replaced with
-    ** the conventional `lua_assert`.
-    **
-    ** lj_assertG(tvref(g->jit_base), "unexpected throw across mcode frame");
-    */
-    lua_assert(tvref(g->jit_base));
+    lj_assertG(tvref(g->jit_base), "unexpected throw across mcode frame");
     if (stub) {  /* Jump to side exit to unwind the trace. */
       G2J(g)->exitcode = LJ_UEXCLASS_ERRCODE(uexclass);
 #ifdef LJ_TARGET_MIPS
@@ -603,15 +590,8 @@ uint8_t *lj_err_register_mcode(void *base, size_t sz, uint8_t *info)
 #ifdef LUA_USE_ASSERT
   {
     struct dwarf_eh_bases ehb;
-    /*
-    ** FIXME: The following assert was replaced with
-    ** the conventional `lua_assert`.
-    **
-    ** lj_assertX(_Unwind_Find_FDE(info + sizeof(err_frame_jit_template)+1, &ehb),
-    **      "bad JIT unwind table registration");
-    */
-    lua_assert(_Unwind_Find_FDE(info + sizeof(err_frame_jit_template)+1,
-               &ehb));
+    lj_assertX(_Unwind_Find_FDE(info + sizeof(err_frame_jit_template)+1, &ehb),
+	       "bad JIT unwind table registration");
   }
 #endif
   return info + sizeof(err_frame_jit_template);
@@ -716,13 +696,7 @@ void lj_err_verify(void)
 {
   int got = 0;
   _Unwind_Backtrace((_Unwind_Trace_Fn)err_verify_bt, &got);
-  /*
-  ** FIXME: The following assert was replaced with
-  ** the conventional `lua_assert`.
-  **
-  ** lj_assertX(got == 2, "broken build: external frame unwinding enabled, but missing -funwind-tables");
-  */
-  lua_assert(got == 2);
+  lj_assertX(got == 2, "broken build: external frame unwinding enabled, but missing -funwind-tables");
 }
 #endif
 
@@ -852,7 +826,7 @@ static ptrdiff_t finderrfunc(lua_State *L)
 	return savestack(L, frame_prevd(frame)+1);  /* xpcall's errorfunc. */
       return 0;
     default:
-      lua_assert(0);
+      lj_assertL(0, "bad frame type");
       return 0;
     }
   }
