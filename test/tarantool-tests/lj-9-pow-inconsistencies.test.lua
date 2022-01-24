@@ -16,6 +16,8 @@ local INTERESTING_VALUES = {
   -- x ^  inf = 0 (inf), if |x| < 1 (|x| > 1).
   -- x ^ -inf = inf (0), if |x| < 1 (|x| > 1).
   0.999999, 1.000001, -0.999999, -1.000001,
+  -- Test power of even numbers optimizations.
+  2, -2, 0.5, -0.5,
 }
 test:plan(1 + (#INTERESTING_VALUES) ^ 2)
 
