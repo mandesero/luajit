@@ -45,7 +45,11 @@ foreach(test_source ${tests})
     OUTPUT_NAME "${exe}${C_TEST_SUFFIX}"
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
   )
-  target_link_libraries(${exe} libtest ${LUAJIT_LIBRARY})
+  set(libtest-libs libtest ${LUAJIT_LIBRARY})
+  if (LUAJIT_ENABLE_COVERAGE)
+    set(libtest-libs ${libtest-libs} --coverage)
+  endif (LUAJIT_ENABLE_COVERAGE)
+  target_link_libraries(${exe} ${libtest-libs})
   LIST(APPEND TESTS_COMPILED ${exe})
 endforeach()
 

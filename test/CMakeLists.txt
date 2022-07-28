@@ -76,4 +76,11 @@ if(LUAJIT_USE_TEST)
     ${PROJECT_NAME}-test
     ${PROJECT_NAME}-luacheck
   )
+
+  if (LUAJIT_ENABLE_COVERAGE)
+    add_custom_target(coverage DEPENDS
+      ${PROJECT_NAME}-test
+      ${PROJECT_NAME}-coverage
+    )
+  endif (LUAJIT_ENABLE_COVERAGE)
 endif()

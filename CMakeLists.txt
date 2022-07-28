@@ -116,6 +116,15 @@ if(LUAJIT_ENABLE_WARNINGS)
   )
 endif()
 
+set(LUAJIT_ENABLE_COVERAGE_DEFAULT OFF)
+option(LUAJIT_ENABLE_COVERAGE
+       "Enable integration with gcovr, a code coverage program"
+       ${LUAJIT_ENABLE_COVERAGE_DEFAULT})
+if (LUAJIT_ENABLE_COVERAGE)
+  AppendFlags(CMAKE_C_FLAGS --coverage)
+  include(CodeCoverage)
+endif(LUAJIT_ENABLE_COVERAGE)
+
 # Auxiliary flags for main targets (libraries, binaries).
 AppendFlags(TARGET_C_FLAGS
   -D_FILE_OFFSET_BITS=64
