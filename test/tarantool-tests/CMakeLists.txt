@@ -4,12 +4,6 @@
 # See the rationale in the root CMakeLists.txt.
 cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 
-find_program(PROVE prove)
-if(NOT PROVE)
-  message(WARNING "`prove' is not found, so tarantool-tests target is not generated")
-  return()
-endif()
-
 macro(BuildTestCLib lib sources)
   add_library(${lib} SHARED EXCLUDE_FROM_ALL ${sources})
   target_include_directories(${lib} PRIVATE
@@ -79,41 +73,12 @@ add_subdirectory(misclib-sysprof-capi)
 set(LUA_PATH
   "${CMAKE_CURRENT_SOURCE_DIR}/?.lua\;${PROJECT_SOURCE_DIR}/tools/?.lua\;${PROJECT_SOURCE_DIR}/src/?.lua"
 )
-set(LUA_TEST_SUFFIX .test.lua)
-set(LUA_TEST_FLAGS --failures --shuffle)
-set(LUA_TEST_ENV
-  "LUA_PATH=\"${LUA_PATH}\;\;\""
-  "LUA_CPATH=\"${LUA_CPATH}\;\;\""
-)
-
-if(CMAKE_VERBOSE_MAKEFILE)
-  list(APPEND LUA_TEST_FLAGS --verbose)
-endif()
 
 # XXX: Since the auxiliary libraries are built as a dynamically
 # loaded modules on MacOS instead of shared libraries as it is
 # done on Linux and BSD, another environment variable should be
 # used to guide <ffi.load> while searching the extension.
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-  # XXX: Apple tries their best to "protect their users from
-  # malware". As a result SIP (see the link[1] below) has been
-  # designed and released. Now, Apple developers are so protected,
-  # that they can load nothing being not installed in the system,
-  # since some programs sanitize the environment before they start
-  # child processes. Specifically, environment variables starting
-  # with DYLD_ and LD_ are unset for child process started by
-  # other programs (like /usr/bin/prove --exec using for launching
-  # test suite). For more info, see the docs[2] below.
-  #
-  # These environment variables are used by FFI machinery to find
-  # the proper shared library, hence we can still tweak testing
-  # environment before calling <ffi.load>. However, the value
-  # can't be passed via the standard environment variable, so we
-  # use env call in prove's --exec flag value to get around SIP
-  # magic tricks.
-  #
-  # [1]: https://support.apple.com/en-us/HT204899
-  # [2]: https://developer.apple.com/library/archive/documentation/Security/Conceptual/System_Integrity_Protection_Guide/RuntimeProtections/RuntimeProtections.html
   list(APPEND LUA_TEST_ENV_MORE DYLD_LIBRARY_PATH="${LD_LIBRARY_PATH}")
 else()
   list(APPEND LUA_TEST_ENV_MORE LD_LIBRARY_PATH="${LD_LIBRARY_PATH}")
@@ -121,23 +86,21 @@ endif()
 
 # LUA_CPATH and LD_LIBRARY_PATH variables and also TESTLIBS list
 # with dependecies are set in scope of BuildTestLib macro.
+# FIXME
 add_custom_target(tarantool-tests
   DEPENDS ${LUAJIT_TEST_BINARY} ${TESTLIBS}
 )
-add_custom_command(TARGET tarantool-tests
-  COMMENT "Running Tarantool tests"
-  COMMAND
-  # XXX: We can't move everything to the "inner" env, since there
-  # are some issues with escaping ';' for different shells. As
-  # a result LUA_PATH/LUA_CPATH variables are set via the "outer"
-  # env, since they are not stripped by SIP like LD_*/DYLD_* are.
-  env
-    ${LUA_TEST_ENV}
-    ${PROVE} ${CMAKE_CURRENT_SOURCE_DIR}
-      --exec 'env ${LUA_TEST_ENV_MORE} ${LUAJIT_TEST_COMMAND}'
-      --ext ${LUA_TEST_SUFFIX}
-      --jobs ${CMAKE_BUILD_PARALLEL_LEVEL}
-      ${LUA_TEST_FLAGS}
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-)
 
+file(GLOB_RECURSE tests ${CMAKE_CURRENT_SOURCE_DIR} "*.test.lua")
+foreach(path ${tests})
+  get_filename_component(test_name ${path} NAME)
+  set(test_title "test/tarantool-tests/${test_name}")
+  message(STATUS "Add ${test_title}")
+  add_test(NAME ${test_title}
+           COMMAND ${LUAJIT_TEST_COMMAND} ${path}
+           WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  )
+  set_tests_properties(${test_title}
+                       PROPERTIES ENVIRONMENT LUA_PATH=${LUA_PATH}:LUA_CPATH=${LUA_CPATH}:${LUA_TEST_ENV_MORE})
+  set_property(TEST ${test_title} PROPERTY LABELS tarantool)
+endforeach()

@@ -313,6 +313,7 @@ set(LUAJIT_TEST_INIT "${PROJECT_SOURCE_DIR}/test/luajit-test-init.lua" CACHE STR
   "Lua code need to be run before tests are started."
 )
 
+enable_testing()
 add_subdirectory(test)
 
 # --- Misc rules ---------------------------------------------------------------

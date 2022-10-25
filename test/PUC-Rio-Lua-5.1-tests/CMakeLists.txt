@@ -30,17 +30,17 @@ add_subdirectory(libs)
 # But, unfortunately, <ltests.c> depends on specific PUC-Rio
 # Lua 5.1 internal headers and should be adapted for LuaJIT.
 
+# FIXME
 add_custom_target(PUC-Rio-Lua-5.1-tests
   DEPENDS ${LUAJIT_TEST_BINARY} PUC-Rio-Lua-5.1-tests-prepare
 )
 
-add_custom_command(TARGET PUC-Rio-Lua-5.1-tests
-  COMMENT "Running PUC-Rio Lua 5.1 tests"
-  COMMAND
-  env
-    LUA_PATH="${LUA_PATH}\;\;"
-    ${LUAJIT_TEST_COMMAND} ${CMAKE_CURRENT_SOURCE_DIR}/all.lua
+message(STATUS "Add test/PUC-Rio-Lua-5.1")
+add_test(NAME PUC-Rio-Lua-5.1
+  COMMAND ${LUAJIT_TEST_COMMAND} ${CMAKE_CURRENT_SOURCE_DIR}/all.lua
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
+set_property(TEST PUC-Rio-Lua-5.1 PROPERTY LABEL PUC-Rio-Lua-5.1)
+set_property(TEST PUC-Rio-Lua-5.1 PROPERTY ENVIRONMENT "LUA_PATH='${LUA_PATH}\;\;'")
 
 # vim: expandtab tabstop=2 shiftwidth=2
