@@ -289,6 +289,16 @@ ifneq (,$(findstring LJ_TARGET_PS3 1,$(TARGET_TESTARCH)))
   TARGET_XLIBS+= -lpthread
 endif
 
+ifneq (,$(findstring LJ_HASSYSPROF ,$(TARGET_TESTARCH)))
+  HAS_LIBUNWIND=$(shell $(TARGET_LD) -lunwind -lunwind-x86_64 -c 2>/dev/null; echo $$?)
+ifneq (,$(HAS_LIBUNWIND))
+  TARGET_XCFLAGS+= -DLUAJIT_DISABLE_SYSPROF
+else
+  TARGET_XLIBS+= -lunwind -lunwind-x86_64
+  TARGET_XCFLAGS+= -fno-omit-frame-pointer -fasynchronous-unwind-tables
+endif
+endif
+
 TARGET_XCFLAGS+= $(CCOPT_$(TARGET_LJARCH))
 TARGET_ARCH+= $(patsubst %,-DLUAJIT_TARGET=LUAJIT_ARCH_%,$(TARGET_LJARCH))
 

@@ -135,6 +135,45 @@ function M.profilename(name)
   return (arg[0]:gsub('^(.+)/([^/]+)%.test%.lua$', replacepattern))
 end
 
+-- XXX: Some tests need more complicated skipconds that can be
+-- implemented in Lua, so this function checks if the test was
+-- marked as excluded via the CLI arg.
+function M.is_excluded(arg)
+  if #arg == 0 then
+    return false
+  end
+
+  local exclusions = nil
+  for i = 1, #arg do
+    local excl_arg = string.match(arg[i], '--exclude=({.+})')
+
+    if excl_arg == nil then
+      break
+    end
+
+    assert(exclusions == nil, '--exclude was already provided')
+
+    local excl_f, err = loadstring('return ' .. excl_arg)
+    assert(excl_f, err)
+
+    local excl = excl_f()
+    assert(type(excl) == 'table', '--exclude option must provide a valid array')
+    exclusions = excl
+  end
+
+  if exclusions == nil then
+    return false
+  end
+
+  local basename = string.match(arg[0], '[%w%-]+%.test%.lua')
+  for _, name in ipairs(exclusions) do
+    if basename == name .. '.test.lua' then
+      return true
+    end
+  end
+  return false
+end
+
 M.const = {
   -- XXX: Max nins is limited by max IRRef, that equals to
   -- REF_DROP - REF_BIAS. Unfortunately, these constants are not

@@ -94,6 +94,12 @@ set(LUA_TEST_ENV
   "LUA_CPATH=\"${LUA_CPATH}\""
 )
 
+if(LUAJIT_DISABLE_SYSPROF)
+  string(CONCAT LUA_EXCLUDE_TESTS [[\{\"misclib-sysprof-lapi\",]]
+                                  [[\"gh-7264-add-proto-trace-sysprof-default\",]]
+                                  [[\"misclib-sysprof-capi\"\}]])
+endif()
+
 if(CMAKE_VERBOSE_MAKEFILE)
   list(APPEND LUA_TEST_FLAGS --verbose)
 endif()
@@ -146,6 +152,7 @@ add_custom_command(TARGET tarantool-tests
       --ext ${LUA_TEST_SUFFIX}
       --jobs ${CMAKE_BUILD_PARALLEL_LEVEL}
       ${LUA_TEST_FLAGS}
+      :: --exclude=${LUA_EXCLUDE_TESTS}
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
 

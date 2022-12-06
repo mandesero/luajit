@@ -91,12 +91,9 @@ if(CMAKE_LIBRARY_ARCHITECTURE)
   AppendFlags(TARGET_C_FLAGS -DLUA_MULTILIB='"lib/${CMAKE_LIBRARY_ARCHITECTURE}"')
 endif()
 
-# Since the assembler part does NOT maintain a frame pointer, it's
-# pointless to slow down the C part by not omitting it. Debugging,
-# tracebacks and unwinding are not affected -- the assembler part
-# has frame unwind information and GCC emits it where needed (x64)
-# or with -g.
-AppendFlags(CMAKE_C_FLAGS -fomit-frame-pointer -fno-stack-protector)
+AppendFlags(CMAKE_C_FLAGS -fno-stack-protector)
+# The '-fomit-frame-pointer` is set depending on sysprof
+# and libunwind support.
 
 # Redefined to benefit from expanding macros in gdb.
 set(CMAKE_C_FLAGS_DEBUG "-g -ggdb3")
@@ -198,6 +195,38 @@ endif()
 option(LUAJIT_DISABLE_SYSPROF "LuaJIT platform and Lua profiler support" OFF)
 if(LUAJIT_DISABLE_SYSPROF)
   AppendFlags(TARGET_C_FLAGS -DLUAJIT_DISABLE_SYSPROF)
+  AppendFlags(CMAKE_C_FLAGS -fomit-frame-pointer)
+else()
+  if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND
+    (
+      CMAKE_SYSTEM_PROCESSOR STREQUAL "i386" OR
+      CMAKE_SYSTEM_PROCESSOR STREQUAL "i686" OR
+      CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64"
+    )
+  )
+    if(ENABLE_BUNDLED_LUAJIT)
+        AppendFlags(CMAKE_C_FLAGS -fno-omit-frame-pointer -fasynchronous-unwind-tables)
+        AppendFlags(TARGET_C_FLAGS -DLUAJIT_EXTERNAL_SYSPROF_BACKTRACER)
+    else()
+      find_package(LibUnwind MODULE QUIET)
+
+      if(NOT LIBUNWIND_FOUND AND NOT LIBUNWIND_LIBRARIES)
+        set(LUAJIT_DISABLE_SYSPROF ON)
+        AppendFlags(TARGET_C_FLAGS -DLUAJIT_DISABLE_SYSPROF)
+
+        # Since the assembler part does NOT maintain a frame
+        # pointer, it's pointless to slow down the C part by not
+        # omitting it. Debugging, tracebacks and unwinding are not
+        # affected -- the assembler part has frame unwind
+        # information and GCC emits it where needed (x64) or
+        # with -g.
+        AppendFlags(CMAKE_C_FLAGS -fomit-frame-pointer)
+        message(STATUS "Libunwind was not found, sysprof is disabled")
+      else()
+        AppendFlags(CMAKE_C_FLAGS -fno-omit-frame-pointer -fasynchronous-unwind-tables)
+      endif()
+    endif()
+  endif()
 endif()
 
 # Switch to harder (and slower) hash function when a collision

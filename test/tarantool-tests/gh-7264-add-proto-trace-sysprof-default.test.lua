@@ -1,7 +1,8 @@
 -- Sysprof is implemented for x86 and x64 architectures only.
-require('utils').skipcond(
+local utils = require('utils')
+utils.skipcond(
   jit.arch ~= 'x86' and jit.arch ~= 'x64' or jit.os ~= 'Linux'
-    or require('ffi').abi('gc64'),
+    or require('ffi').abi('gc64') or utils.is_excluded(arg),
   jit.arch..' architecture or '..jit.os..
   ' OS is NIY for sysprof'
 )

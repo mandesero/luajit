@@ -1,9 +1,12 @@
 -- Sysprof is implemented for x86 and x64 architectures only.
 local utils = require("utils")
+local ffi = require("ffi")
+-- luacheck: globals is_excluded
 utils.skipcond(
-  jit.arch ~= "x86" and jit.arch ~= "x64" or jit.os ~= "Linux",
+  jit.arch ~= "x86" and jit.arch ~= "x64" or jit.os ~= "Linux"
+    or ffi.abi("gc64") or utils.is_excluded(arg),
   jit.arch.." architecture or "..jit.os..
-  " OS is NIY for sysprof"
+  " OS is NIY for sysprof, or the test suite was excluded"
 )
 
 local testsysprof = require("testsysprof")
@@ -14,15 +17,11 @@ local jit = require('jit')
 jit.off()
 
 local test = tap.test("clib-misc-sysprof")
-test:plan(2)
+test:plan(4)
 
 test:ok(testsysprof.base())
 test:ok(testsysprof.validation())
 
--- FIXME: The following two tests are disabled because sometimes
--- `backtrace` dynamically loads a platform-specific unwinder, which is
--- not signal-safe.
---[[
 local function lua_payload(n)
   if n <= 1 then
     return n
@@ -55,5 +54,4 @@ jit.on()
 jit.flush()
 
 test:ok(testsysprof.profile_func(payload))
---]]
 os.exit(test:check() and 0 or 1)

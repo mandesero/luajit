@@ -214,7 +214,6 @@ static int profile_func(lua_State *L)
 
 	assert(luaM_sysprof_set_writer(buffer_writer_default) == PROFILE_SUCCESS);
 	assert(luaM_sysprof_set_on_stop(on_stop_cb_default) == PROFILE_SUCCESS);
-	assert(luaM_sysprof_set_backtracer(NULL) == PROFILE_SUCCESS);
 
 	status = luaM_sysprof_start(L, &opt);
 	assert(PROFILE_SUCCESS == status);

@@ -15,7 +15,7 @@ test:plan(2)
 -- error handling"), etc.).
 -- This amount is suited well for GC64 and non-GC64 mode.
 -- luacheck: no unused
-local _, _, _, _, _, _
+local _, _, _, _, _
 
 local handler_is_called = false
 local recursive_f
