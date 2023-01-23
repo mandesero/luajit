@@ -20,8 +20,14 @@ local LJBC_PREFIX = "luaJIT_BC_"
 ------------------------------------------------------------------------------
 
 local function usage()
-  io.stderr:write[[
-Save LuaJIT bytecode: luajit -b[options] input output
+  local title = "LuaJIT"
+  if _TARANTOOL then
+    title = "Tarantool"
+  end
+  local cmd = string.lower(title)
+
+  io.stderr:write(string.format([[
+Save %s bytecode: %s -b[options] input output
   -l        Only list bytecode.
   -s        Strip debug info (default).
   -g        Keep debug info.
@@ -34,7 +40,7 @@ Save LuaJIT bytecode: luajit -b[options] input output
   -         Use stdin as input and/or stdout as output.
 
 File types: c h obj o raw (default)
-]]
+]], title, cmd))
   os.exit(1)
 end
 
