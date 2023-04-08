@@ -165,6 +165,27 @@ static TRef fwd_ahload(jit_State *J, IRRef xref)
 	    goto cselim;
 	  ref2 = newref->prev;
 	}
+      } else if (ir->o == IR_TDUP) {
+	IRIns *key = IR(xr->op2);
+	if (key->o == IR_KSLOT) key = IR(key->op1);
+	/* After rehashing of a table, HLOAD may point to the value inserted by
+	** ASTORE. For now, simply consider any ASTORE to the same table as a
+	** conflict without forwarding anything.
+	*/
+	if (irt_isnum(key->t)) {
+	  IRRef ref2 = J->chain[IR_ASTORE];
+	  while (ref2 > tab) {
+	    IRIns *astore = IR(ref2);
+	    IRIns *aref = IR(astore->op1);
+	    IRRef store_tab = IR(aref->op1)->op1;
+	    /* Same table to store means potential conflict. */
+	    if (store_tab == tab || aa_table(J, store_tab, tab) != ALIAS_NO) {
+	      lim = ref2;
+	      goto cselim;
+	    }
+	    ref2 = astore->prev;
+	  }
+	}
       }
       /* NEWREF inhibits CSE for HREF, and dependent FLOADs from HREFK/AREF.
       ** But the above search for conflicting stores was limited by xref.
