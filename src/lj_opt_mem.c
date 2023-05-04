@@ -17,6 +17,7 @@
 #include "lj_ir.h"
 #include "lj_jit.h"
 #include "lj_iropt.h"
+#include "lj_trace.h"
 #include "lj_ircall.h"
 
 /* Some local macros to save typing. Undef'd at the end. */
@@ -180,7 +181,11 @@ static TRef fwd_ahload(jit_State *J, IRRef xref)
 	}
 	ref = store->prev;
       }
-      lua_assert(ir->o != IR_TNEW || irt_isnil(fins->t));
+      if (ir->o == IR_TNEW && !irt_isnil(fins->t)) {
+	/* Type instability in loop-carried dependency. */
+	lj_trace_err(J, LJ_TRERR_TYPEINS);
+      }
+
       if (irt_ispri(fins->t)) {
 	return TREF_PRI(irt_type(fins->t));
       } else if (irt_isnum(fins->t) || (LJ_DUALNUM && irt_isint(fins->t)) ||
@@ -191,7 +196,11 @@ static TRef fwd_ahload(jit_State *J, IRRef xref)
 	if (key->o == IR_KSLOT) key = IR(key->op1);
 	lj_ir_kvalue(J->L, &keyv, key);
 	tv = lj_tab_get(J->L, ir_ktab(IR(ir->op1)), &keyv);
-	lua_assert(itype2irt(tv) == irt_type(fins->t));
+	if (itype2irt(tv) != irt_type(fins->t)) {
+	  /* Type instability in loop-carried dependency. */
+	  lj_trace_err(J, LJ_TRERR_TYPEINS);
+	}
+
 	if (irt_isnum(fins->t))
 	  return lj_ir_knum_u64(J, tv->u64);
 	else if (LJ_DUALNUM && irt_isint(fins->t))
