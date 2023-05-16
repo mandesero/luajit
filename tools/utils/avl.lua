@@ -86,7 +86,7 @@ function M.insert(node, key, value)
   elseif key > node.key then
     node.right = M.insert(node.right, key, value)
   else
-    table.insert(node.value, value)
+    node.value = value
   end
 
   update_height(node)
