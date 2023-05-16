@@ -1,12 +1,9 @@
 local bufread = require "utils.bufread"
 local sysprof = require "sysprof.parse"
 local symtab = require "utils.symtab"
-local misc = require "sysprof.collapse"
 
 local stdout, stderr = io.stdout, io.stderr
 local match, gmatch = string.match, string.gmatch
-
-local split_by_vmstate = false
 
 -- Program options.
 local opt_map = {}
@@ -26,10 +23,6 @@ Supported options are:
   --split                           Split callchains by vmstate
 ]]
   os.exit(0)
-end
-
-function opt_map.split()
-  split_by_vmstate = true
 end
 
 -- Print error and exit with error status.
@@ -85,28 +78,14 @@ local function parseargs(args)
   return args[args.argn]
 end
 
-local function traverse_calltree(node, prefix)
-  if node.is_leaf then
-    print(prefix..' '..node.count)
-  end
-
-  local sep_prefix = #prefix == 0 and prefix or prefix..';'
-
-  for name,child in pairs(node.children) do
-    traverse_calltree(child, sep_prefix..name)
-  end
-end
-
 local function dump(inputfile)
   local reader = bufread.new(inputfile)
-
   local symbols = symtab.parse(reader)
-
   local events = sysprof.parse(reader, symbols)
-  local calltree = misc.collapse(events, symbols, split_by_vmstate)
 
-  traverse_calltree(calltree, '')
-
+  for stack, count in pairs(events) do
+    print(stack, count)
+  end
   os.exit(0)
 end
 

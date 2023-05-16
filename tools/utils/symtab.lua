@@ -176,7 +176,7 @@ function M.demangle(symtab, loc)
   local key, value = avl.floor(symtab.cfunc, addr)
 
   if key then
-    return string_format("%s:%#x", value[gen].name, key)
+    return string_format("%s:%#x", value.name, key)
   end
 
   return string_format("CFUNC %#x", addr)
