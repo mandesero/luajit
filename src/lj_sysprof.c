@@ -241,7 +241,6 @@ static void stream_guest(struct sysprof *sp, uint32_t vmstate)
 static void stream_host(struct sysprof *sp, uint32_t vmstate)
 {
   struct lua_State *L = gco2th(gcref(sp->g->cur_L));
-  lj_symtab_dump_newc(&sp->lib_adds, &sp->out, LJP_SYMTAB_CFUNC_EVENT, L);
   lj_wbuf_addbyte(&sp->out, (uint8_t)vmstate);
   stream_backtrace_host(sp);
 }
