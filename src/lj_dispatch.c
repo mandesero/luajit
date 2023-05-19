@@ -30,6 +30,9 @@
 #if LJ_HASPROFILE
 #include "lj_profile.h"
 #endif
+#if LJ_HASSYSPROF
+#include "lj_sysprof.h"
+#endif
 #include "lj_vm.h"
 #include "luajit.h"
 
@@ -552,7 +555,10 @@ void LJ_FASTCALL lj_dispatch_profile(lua_State *L, const BCIns *pc)
   global_State *g;
   setcframe_pc(cf, pc);
   L->top = L->base + cur_topslot(pt, pc, cframe_multres_n(cf));
-  lj_profile_interpreter(L);
+  if (lj_symtab_update_requested())
+    lj_symtab_update_hook(L);
+  else
+    lj_profile_interpreter(L);
   setcframe_pc(cf, oldpc);
   g = G(L);
   setgcref(g->cur_L, obj2gco(L));

@@ -76,6 +76,7 @@ struct sysprof {
   lj_profile_timer timer; /* Profiling timer. */
   int saved_errno; /* Saved errno when profiler failed. */
   uint32_t lib_adds; /* Number of libs loaded. Monotonic. */
+  volatile sig_atomic_t symtab_update_needed; /* Symtab update request flag. */
 };
 /*
 ** XXX: Only one VM can be profiled at a time.
@@ -87,6 +88,36 @@ static struct sysprof sysprof = {0};
 
 static const uint8_t ljp_header[] = {'l', 'j', 'p', LJP_FORMAT_VERSION,
                                       0x0, 0x0, 0x0};
+
+void lj_symtab_update_hook(lua_State *L) {
+  struct sysprof *sp = &sysprof;
+  global_State *g = G(L);
+  uint8_t mask;
+  mask = (g->hookmask & ~HOOK_PROFILE);
+  sp->symtab_update_needed = 0;
+  if (!(mask & HOOK_VMEVENT)) {
+    g->hookmask = HOOK_VMEVENT;
+    lj_dispatch_update(g);
+    lj_symtab_dump_newc(&sp->lib_adds, &sp->out, LJP_SYMTAB_CFUNC_EVENT, L);
+  }
+  g->hookmask = mask;
+  lj_dispatch_update(g);
+}
+
+int lj_symtab_update_requested() {
+  struct sysprof *sp = &sysprof;
+  return sp->symtab_update_needed;
+}
+
+static void setup_symtab_update_hook(struct sysprof *sp) {
+  global_State *g = sp->g;
+  uint8_t mask = g->hookmask;
+  if (!(mask & (HOOK_PROFILE|HOOK_VMEVENT|HOOK_GC))) {
+    sp->symtab_update_needed = 1;
+    g->hookmask = (mask | HOOK_PROFILE);
+    lj_dispatch_update(g);
+  }
+}
 
 static int stream_is_needed(struct sysprof *sp)
 {
@@ -240,8 +271,7 @@ static void stream_guest(struct sysprof *sp, uint32_t vmstate)
 
 static void stream_host(struct sysprof *sp, uint32_t vmstate)
 {
-  struct lua_State *L = gco2th(gcref(sp->g->cur_L));
-  lj_symtab_dump_newc(&sp->lib_adds, &sp->out, LJP_SYMTAB_CFUNC_EVENT, L);
+  setup_symtab_update_hook(sp);
   lj_wbuf_addbyte(&sp->out, (uint8_t)vmstate);
   stream_backtrace_host(sp);
 }

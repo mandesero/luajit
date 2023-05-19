@@ -108,4 +108,8 @@ void lj_sysprof_add_proto(const struct GCproto *pt);
 void lj_sysprof_add_trace(const struct GCtrace *tr);
 #endif /* LJ_HASJIT */
 
+void lj_symtab_update_hook(lua_State *L);
+
+int lj_symtab_update_requested();
+
 #endif
