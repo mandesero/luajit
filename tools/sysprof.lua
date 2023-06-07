@@ -5,8 +5,12 @@ local symtab = require "utils.symtab"
 local stdout, stderr = io.stdout, io.stderr
 local match, gmatch = string.match, string.gmatch
 
+
 -- Program options.
-local opt_map = {}
+local preserve_rip = false
+local opt_map = {
+  ['rip'] = function() preserve_rip = true end,
+}
 
 function opt_map.help()
   stdout:write [[
@@ -81,7 +85,7 @@ end
 local function dump(inputfile)
   local reader = bufread.new(inputfile)
   local symbols = symtab.parse(reader)
-  local events = sysprof.parse(reader, symbols)
+  local events = sysprof.parse(reader, symbols, preserve_rip)
 
   for stack, count in pairs(events) do
     print(stack, count)

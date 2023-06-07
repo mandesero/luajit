@@ -39,6 +39,8 @@ local SYMTAB_LFUNC_EVENT = 10
 local SYMTAB_CFUNC_EVENT = 11
 local SYMTAB_TRACE_EVENT = 12
 
+local preserve_rip = false
+
 local function new_event()
   return {
     lua = {
@@ -73,7 +75,7 @@ local function parse_cfunc(reader, symbols)
   local addr = reader:read_uleb128()
   local loc = symtab.loc(symbols, { addr = addr })
   loc.type = FRAME.CFUNC
-  return symtab.demangle(symbols, loc)
+  return symtab.demangle(symbols, loc, preserve_rip)
 end
 
 local frame_parsers = {
@@ -100,7 +102,10 @@ local function parse_host_callchain(reader, event, symbols)
 
   while addr ~= 0 do
     local loc = symtab.loc(symbols, { addr = addr })
-    table.insert(event.host.callchain, 1, symtab.demangle(symbols, loc))
+    table.insert(
+      event.host.callchain, 1,
+      symtab.demangle(symbols, loc, preserve_rip)
+    )
     addr = reader:read_uleb128()
   end
 end
@@ -232,8 +237,9 @@ local function parse_event(reader, events, symbols)
   return true
 end
 
-function M.parse(reader, symbols)
+function M.parse(reader, symbols, detailed_rip)
   local events = {}
+  preserve_rip = detailed_rip
 
   local magic = reader:read_octets(3)
   local version = reader:read_octets(1)

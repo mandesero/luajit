@@ -156,7 +156,7 @@ local function demangle_trace(symtab, loc)
   return trace_str
 end
 
-function M.demangle(symtab, loc)
+function M.demangle(symtab, loc, preserve_rip)
   if loc.traceno ~= 0 and loc.traceno ~= nil then
     return demangle_trace(symtab, loc)
   end
@@ -176,6 +176,7 @@ function M.demangle(symtab, loc)
   local key, value = avl.floor(symtab.cfunc, addr)
 
   if key then
+    key = preserve_rip and addr or key
     return string_format("%s:%#x", value.name, key)
   end
 
