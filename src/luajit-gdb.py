@@ -38,6 +38,29 @@ def lookup(symbol):
     variable, _ = gdb.lookup_symbol(symbol)
     return variable.value() if variable else None
 
+def parse_flags(raw_flags, permitted_flags):
+    flags = {}
+    for flag in raw_flags:
+        if not flag in permitted_flags:
+            raise gdb.GdbError('Unrecongnized option: "{}"'.format(flag))
+        flags[flag] = True
+
+    return flags
+
+def extract_flags(arg, permitted_flags):
+    if not arg:
+        return None, None
+
+    flags = {}
+    if arg.startswith('/'):
+        match = re.fullmatch(r'/(\S*)\s+(.*)', arg)
+        if not match:
+            return arg, flags
+        raw_flags, arg = match.group(1, 2)
+        flags = parse_flags(raw_flags, permitted_flags)
+
+    return arg, flags
+
 def parse_arg(arg):
     if not arg:
         return None
@@ -112,6 +135,101 @@ def frametypes(ft):
         FRAME['CONT'] : 'M',
         FRAME['VARG'] : 'V',
     }.get(ft, '?')
+
+MM_NAMES = [
+    'index',
+    'newindex',
+    'gc',
+    'mode',
+    'eq',
+    'len',
+    'lt',
+    'le',
+    'concat',
+    'call',
+    'add',
+    'sub',
+    'mul',
+    'div',
+    'mod',
+    'pow',
+    'unm',
+    'metatable',
+    'tostring',
+    # TODO: depends on LJ_HASFFI, see MMDEF_FFI(_).
+    'new',
+    # TODO: depends on LJ_52 || LJ_HASFFI, see MMDEF_PAIRS(_).
+    'pairs',
+    'ipairs',
+]
+
+GCROOT_MMNAME = 0
+GCROOT_BASEMT = GCROOT_MMNAME + len(MM_NAMES)
+GCROOT_IO_INPUT = GCROOT_BASEMT + i2notu32(LJ_T['NUMX']) + 1
+GCROOT_IO_OUTPUT = GCROOT_IO_INPUT + 1
+
+def idx_name(field_name):
+    return {
+        'ksimd': {
+            0 * 2: 'LJ_KSIMD_ABS',
+            1 * 2: 'LJ_KSIMD_NEG',
+        },
+        # TODO: gcroot.
+        'gcroot': {
+            **{
+                i: 'GCROOT_MMNAME_' + MM_NAMES[i] for i in range(len(MM_NAMES))
+            }, **{
+                i2notu32(LJ_T[k]) + GCROOT_BASEMT: \
+                    'GCROOT_BASEMT_' + k for k in LJ_T.keys()
+            }, **{
+                GCROOT_IO_INPUT:  'GCROOT_IO_INPUT',
+                GCROOT_IO_OUTPUT: 'GCROOT_IO_OUTPUT',
+            }
+        }
+    }.get(field_name, None)
+
+
+def type_ofs_path(tp, offset, prev_name=None):
+    assert offset < tp.sizeof, 'offset is bigger than object size'
+    if tp.code == gdb.TYPE_CODE_TYPEDEF:
+        tp = tp.strip_typedefs()
+    if tp.code == gdb.TYPE_CODE_STRUCT:
+        fields = tp.fields()
+        for n_field in range(len(fields)):
+            islast = n_field == (len(fields) - 1)
+            field = fields[n_field]
+            start_field = field.bitpos / 8
+            end_field = fields[n_field + 1].bitpos / 8 if not islast else tp.sizeof
+            if start_field <= offset and offset < end_field:
+                next_name = type_ofs_path(field.type, offset - start_field, field.name)
+                return '.{}{}'.format(field.name, next_name if next_name else '')
+    elif tp.code == gdb.TYPE_CODE_ARRAY:
+        # Get array field type.
+        target = tp.target()
+        tsize = target.sizeof
+        idx = int(offset // tsize)
+        next_name = type_ofs_path(target, offset - idx * tsize)
+
+        idxname = idx_name(prev_name)
+        if idxname and idx in idxname:
+            idx = idxname[idx]
+        return '[{}]{}'.format(idx, next_name if next_name else '')
+    else:
+        return None
+
+ggfname_cache = {}
+def ggfname_by_offset(offset):
+    if offset in ggfname_cache:
+        return ggfname_cache[offset]
+
+    field_path = type_ofs_path(gtype('GG_State'), offset)
+    if not field_path:
+        return None
+
+    # Remove first '.'.
+    ggfname = 'offsetof(GG, {})'.format(field_path[1:])
+    ggfname_cache[offset] = ggfname
+    return ggfname
 
 def bc_op(ins):
     return int(ins) & 0xff
@@ -255,6 +373,362 @@ BYTECODES = [
     {'name': 'FUNCC',  'ra': 'rbase', 'rb':  ___,    'rcd': ___,     'mm': ___},
     {'name': 'FUNCCW', 'ra': 'rbase', 'rb':  ___,    'rcd': ___,     'mm': ___},
 ]
+
+IRS = [
+    # Guarded assertions.
+    {'name': 'LT',     'mode': 'N',  'left': 'ref', 'right': 'ref'},
+    {'name': 'GE',     'mode': 'N',  'left': 'ref', 'right': 'ref'},
+    {'name': 'LE',     'mode': 'N',  'left': 'ref', 'right': 'ref'},
+    {'name': 'GT',     'mode': 'N',  'left': 'ref', 'right': 'ref'},
+
+    {'name': 'ULT',    'mode': 'N',  'left': 'ref', 'right': 'ref'},
+    {'name': 'UGE',    'mode': 'N',  'left': 'ref', 'right': 'ref'},
+    {'name': 'ULE',    'mode': 'N',  'left': 'ref', 'right': 'ref'},
+    {'name': 'UGT',    'mode': 'N',  'left': 'ref', 'right': 'ref'},
+
+    {'name': 'EQ',     'mode': 'C',  'left': 'ref', 'right': 'ref'},
+    {'name': 'NE',     'mode': 'C',  'left': 'ref', 'right': 'ref'},
+
+    {'name': 'ABC',    'mode': 'N',  'left': 'ref', 'right': 'ref'},
+    {'name': 'RETF',   'mode': 'S',  'left': 'ref', 'right': 'ref'},
+
+    # Miscellaneous ops.
+    {'name': 'NOP',    'mode': 'N',  'left': ___,   'right': ___},
+    {'name': 'BASE',   'mode': 'N',  'left': 'lit', 'right': 'lit'},
+    {'name': 'PVAL',   'mode': 'N',  'left': 'lit', 'right': ___},
+    {'name': 'GCSTEP', 'mode': 'S',  'left': ___,   'right': ___},
+    {'name': 'HIOP',   'mode': 'S',  'left': 'ref', 'right': 'ref'},
+    {'name': 'LOOP',   'mode': 'S',  'left': ___,   'right': ___},
+    {'name': 'USE',    'mode': 'S',  'left': 'ref', 'right': ___},
+    {'name': 'PHI',    'mode': 'S',  'left': 'ref', 'right': 'ref'},
+    {'name': 'RENAME', 'mode': 'S',  'left': 'ref', 'right': 'lit'},
+    {'name': 'PROF',   'mode': 'S',  'left': ___,   'right': ___},
+
+    # Constants.
+    {'name': 'KPRI',   'mode': 'N',  'left': ___,   'right': ___},
+    {'name': 'KINT',   'mode': 'N',  'left': 'cst', 'right': ___},
+    {'name': 'KGC',    'mode': 'N',  'left': 'cst', 'right': ___},
+    {'name': 'KPTR',   'mode': 'N',  'left': 'cst', 'right': ___},
+    {'name': 'KKPTR',  'mode': 'N',  'left': 'cst', 'right': ___},
+    {'name': 'KNULL',  'mode': 'N',  'left': 'cst', 'right': ___},
+    {'name': 'KNUM',   'mode': 'N',  'left': 'cst', 'right': ___},
+    {'name': 'KINT64', 'mode': 'N',  'left': 'cst', 'right': ___},
+    {'name': 'KSLOT',  'mode': 'N',  'left': 'ref', 'right': 'lit'},
+
+    # Bit ops.
+    {'name': 'BNOT',   'mode': 'N',  'left': 'ref', 'right': ___},
+    {'name': 'BSWAP',  'mode': 'N',  'left': 'ref', 'right': ___},
+    {'name': 'BAND',   'mode': 'C',  'left': 'ref', 'right': 'ref'},
+    {'name': 'BOR',    'mode': 'C',  'left': 'ref', 'right': 'ref'},
+    {'name': 'BXOR',   'mode': 'C',  'left': 'ref', 'right': 'ref'},
+    {'name': 'BSHL',   'mode': 'N',  'left': 'ref', 'right': 'ref'},
+    {'name': 'BSHR',   'mode': 'N',  'left': 'ref', 'right': 'ref'},
+    {'name': 'BSAR',   'mode': 'N',  'left': 'ref', 'right': 'ref'},
+    {'name': 'BROL',   'mode': 'N',  'left': 'ref', 'right': 'ref'},
+    {'name': 'BROR',   'mode': 'N',  'left': 'ref', 'right': 'ref'},
+
+    # Arithmetic ops. ORDER ARITH
+    {'name': 'ADD',    'mode': 'C',  'left': 'ref', 'right': 'ref'},
+    {'name': 'SUB',    'mode': 'N',  'left': 'ref', 'right': 'ref'},
+    {'name': 'MUL',    'mode': 'C',  'left': 'ref', 'right': 'ref'},
+    {'name': 'DIV',    'mode': 'N',  'left': 'ref', 'right': 'ref'},
+    {'name': 'MOD',    'mode': 'N',  'left': 'ref', 'right': 'ref'},
+    {'name': 'POW',    'mode': 'N',  'left': 'ref', 'right': 'ref'},
+    {'name': 'NEG',    'mode': 'N',  'left': 'ref', 'right': 'ref'},
+
+    {'name': 'ABS',    'mode': 'N',  'left': 'ref', 'right': 'ref'},
+    {'name': 'LDEXP',  'mode': 'N',  'left': 'ref', 'right': 'ref'},
+    {'name': 'MIN',    'mode': 'C',  'left': 'ref', 'right': 'ref'},
+    {'name': 'MAX',    'mode': 'C',  'left': 'ref', 'right': 'ref'},
+    {'name': 'FPMATH', 'mode': 'N',  'left': 'ref', 'right': 'lit'},
+
+    # Overflow-checking arithmetic ops.
+    {'name': 'ADDOV',  'mode': 'CW', 'left': 'ref', 'right': 'ref'},
+    {'name': 'SUBOV',  'mode': 'NW', 'left': 'ref', 'right': 'ref'},
+    {'name': 'MULOV',  'mode': 'CW', 'left': 'ref', 'right': 'ref'},
+
+    # Memory ops. A = array, H = hash, U = upvalue, F = field, S = stack.
+
+    # Memory references.
+    {'name': 'AREF',   'mode': 'R',  'left': 'ref', 'right': 'ref'},
+    {'name': 'HREFK',  'mode': 'R',  'left': 'ref', 'right': 'ref'},
+    {'name': 'HREF',   'mode': 'L',  'left': 'ref', 'right': 'ref'},
+    {'name': 'NEWREF', 'mode': 'S',  'left': 'ref', 'right': 'ref'},
+    {'name': 'UREFO',  'mode': 'LW', 'left': 'ref', 'right': 'lit'},
+    {'name': 'UREFC',  'mode': 'LW', 'left': 'ref', 'right': 'lit'},
+    {'name': 'FREF',   'mode': 'R',  'left': 'ref', 'right': 'lit'},
+    {'name': 'STRREF', 'mode': 'N',  'left': 'ref', 'right': 'ref'},
+    {'name': 'LREF',   'mode': 'L',  'left': ___,   'right': ___},
+
+    # Loads and Stores. These must be in the same order.
+    {'name': 'ALOAD',  'mode': 'L',  'left': 'ref', 'right': ___},
+    {'name': 'HLOAD',  'mode': 'L',  'left': 'ref', 'right': ___},
+    {'name': 'ULOAD',  'mode': 'L',  'left': 'ref', 'right': ___},
+    {'name': 'FLOAD',  'mode': 'L',  'left': 'ref', 'right': 'lit'},
+    {'name': 'XLOAD',  'mode': 'L',  'left': 'ref', 'right': 'lit'},
+    {'name': 'SLOAD',  'mode': 'L',  'left': 'lit', 'right': 'lit'},
+    {'name': 'VLOAD',  'mode': 'L',  'left': 'ref', 'right': ___},
+
+    {'name': 'ASTORE', 'mode': 'S',  'left': 'ref', 'right': 'ref'},
+    {'name': 'HSTORE', 'mode': 'S',  'left': 'ref', 'right': 'ref'},
+    {'name': 'USTORE', 'mode': 'S',  'left': 'ref', 'right': 'ref'},
+    {'name': 'FSTORE', 'mode': 'S',  'left': 'ref', 'right': 'ref'},
+    {'name': 'XSTORE', 'mode': 'S',  'left': 'ref', 'right': 'ref'},
+
+    # Allocations.
+    {'name': 'SNEW',   'mode': 'N',  'left': 'ref', 'right': 'ref'},
+    {'name': 'XSNEW',  'mode': 'A',  'left': 'ref', 'right': 'ref'},
+    {'name': 'TNEW',   'mode': 'AW', 'left': 'lit', 'right': 'lit'},
+    {'name': 'TDUP',   'mode': 'AW', 'left': 'ref', 'right': ___},
+    {'name': 'CNEW',   'mode': 'AW', 'left': 'ref', 'right': 'ref'},
+    {'name': 'CNEWI',  'mode': 'NW', 'left': 'ref', 'right': 'ref'},
+
+    # Buffer operations.
+    {'name': 'BUFHDR', 'mode': 'L',  'left': 'ref', 'right': 'lit'},
+    {'name': 'BUFPUT', 'mode': 'L',  'left': 'ref', 'right': 'ref'},
+    {'name': 'BUFSTR', 'mode': 'A',  'left': 'ref', 'right': 'ref'},
+
+    # Barriers.
+    {'name': 'TBAR',   'mode': 'S',  'left': 'ref', 'right': ___},
+    {'name': 'OBAR',   'mode': 'S',  'left': 'ref', 'right': 'ref'},
+    {'name': 'XBAR',   'mode': 'S',  'left': ___,   'right': ___},
+
+    # Type conversions.
+    {'name': 'CONV',   'mode': 'NW', 'left': 'ref', 'right': 'lit'},
+    {'name': 'TOBIT',  'mode': 'N',  'left': 'ref', 'right': 'ref'},
+    {'name': 'TOSTR',  'mode': 'N',  'left': 'ref', 'right': 'lit'},
+    {'name': 'STRTO',  'mode': 'N',  'left': 'ref', 'right': ___},
+
+    # Calls.
+    {'name': 'CALLN',  'mode': 'N',  'left': 'ref', 'right': 'lit'},
+    {'name': 'CALLA',  'mode': 'A',  'left': 'ref', 'right': 'lit'},
+    {'name': 'CALLL',  'mode': 'L',  'left': 'ref', 'right': 'lit'},
+    {'name': 'CALLS',  'mode': 'S',  'left': 'ref', 'right': 'lit'},
+    {'name': 'CALLXS', 'mode': 'S',  'left': 'ref', 'right': 'ref'},
+    {'name': 'CARG',   'mode': 'N',  'left': 'ref', 'right': 'ref'},
+]
+
+IRTYPES = [
+  'nil',
+  'fal',
+  'tru',
+  'lud',
+  'str',
+  'p32',
+  'thr',
+  'pro',
+  'fun',
+  'p64',
+  'cdt',
+  'tab',
+  'udt',
+  'flt',
+  'num',
+  'i8 ',
+  'u8 ',
+  'i16',
+  'u16',
+  'int',
+  'u32',
+  'i64',
+  'u64',
+  'sfp',
+]
+
+# FIXME: merge with short.
+# IR types.
+IRT = {
+    'NIL':     1,
+    'FALSE':   2,
+    'TRUE':    3,
+    'LIGHTUD': 4,
+    'STR':     5,
+    'P32':     6,
+    'THREAD':  7,
+    'PROTO':   8,
+    'FUNC':    9,
+    'P64':     10,
+    'CDATA':   11,
+    'TAB':     12,
+    'UDATA':   13,
+    'FLOAT':   14,
+    'NUM':     15,
+    'I8':      16,
+    'U8':      17,
+    'I16':     18,
+    'U16':     19,
+    'INT':     20,
+    'U32':     21,
+    'I64':     22,
+    'U64':     23,
+    'SOFTFP':  24,
+}
+
+IRFIELDS = [
+    'str.len',
+    'func.env',
+    'func.pc',
+    'func.ffid',
+    'thread.env',
+    'tab.meta',
+    'tab.array',
+    'tab.node',
+    'tab.asize',
+    'tab.hmask',
+    'tab.nomm',
+    'udata.meta',
+    'udata.udtype',
+    'udata.file',
+    'cdata.ctypeid',
+    'cdata.ptr',
+    'cdata.int',
+    'cdata.int64',
+    'cdata.int64_4',
+]
+
+IRFPMS = [
+    'floor',
+    'ceil',
+    'trunc',
+    'sqrt',
+    'exp2',
+    'log',
+    'log2',
+    'other'
+]
+
+def litname_sload(mode):
+    modes_str = ''
+    modes_str += 'P' if mode & 0x1  else ''
+    modes_str += 'F' if mode & 0x2  else ''
+    modes_str += 'T' if mode & 0x4  else ''
+    modes_str += 'C' if mode & 0x8  else ''
+    modes_str += 'R' if mode & 0x10 else ''
+    modes_str += 'I' if mode & 0x20 else ''
+    return modes_str
+
+def litname_xload(mode):
+    flags = ['-', 'R', 'V', 'RV', 'U', 'RU', 'VU', 'RVU']
+    return flags[mode]
+
+def litname_conv(mode):
+    IRCONV_DSH = 5
+    IRCONV_CSH = 12
+    IRCONV_SEXT = 0x800
+    IRCONV_SRCMASK = 0x1f
+    conv_str = '{to}.{frm}'.format(
+        to = IRTYPES[(mode >> IRCONV_DSH) & IRCONV_SRCMASK],
+        frm = IRTYPES[mode & IRCONV_SRCMASK]
+    )
+    conv_str += ' sext' if mode & IRCONV_SEXT else ''
+    num2int_mode = mode >> IRCONV_CSH
+    if num2int_mode == 2:
+        conv_str += " index"
+    elif num2int_mode == 3:
+        conv_str += " check"
+    return conv_str
+
+def litname_irfield(mode):
+    if mode >= len(IRFIELDS):
+        return 'unknown irfield'
+    return IRFIELDS[mode]
+
+def litname_fpm(mode):
+    if mode >= len(IRFPMS):
+        return 'unknown irfpm'
+    return IRFPMS[mode]
+
+def litname_bufhdr(mode):
+    modes = ['RESET', 'APPEND']
+    if mode >= len(modes):
+        return 'unknown bufhdr mode'
+    return modes[mode]
+
+def litname_tostr(mode):
+    modes = ['INT', 'NUM', 'CHAR']
+    if mode >= len(modes):
+        return 'unknown tostr mode'
+    return modes[mode]
+
+IR_LITNAMES = {
+    'SLOAD':  litname_sload,
+    'XLOAD':  litname_xload,
+    'CONV':   litname_conv,
+    'FLOAD':  litname_irfield,
+    'FREF':   litname_irfield,
+    'FPMATH': litname_fpm,
+    'BUFHDR': litname_bufhdr,
+    'TOSTR':  litname_tostr
+}
+
+# Additional flags.
+IRT_MARK  = 0x20 # Marker for misc. purposes.
+IRT_ISPHI = 0x40 # Instruction is left or right PHI operand.
+IRT_GUARD = 0x80 # Instruction is a guard.
+# Masks.
+IRT_TYPE = 0x1f
+
+RID_NONE = 0x80
+RID_MASK = 0x7f
+RID_INIT = (RID_NONE | RID_MASK)
+RID_SINK = (RID_INIT - 1)
+RID_SUNK = (RID_INIT - 2)
+
+REF_BIAS = 0x8000
+
+TREF_SHIFT = 24
+
+TREF_REFMASK = 0x0000ffff
+TREF_FRAME   = 0x00010000
+TREF_CONT    = 0x00020000
+# Snapshot flags and masks.
+SNAP_FRAME     = 0x010000
+SNAP_SOFTFPNUM = 0x080000
+
+def irt_type(t):
+    return cast('IRType', t['irt'] & IRT_TYPE)
+
+def tref_type(tr):
+    return cast('IRType', (tr >> TREF_SHIFT) & IRT_TYPE)
+
+def tref_ref(tr):
+    return int(tr & TREF_REFMASK)
+
+def irt_ismarked(t):
+    return t['irt'] & IRT_MARK
+
+def irt_isphi(t):
+    return t['irt'] & IRT_ISPHI
+
+def irt_isguard(t):
+    return t['irt'] & IRT_GUARD
+
+def irt_toitype(irt):
+    t = irt_type(irt)
+    if t >= IRT['NUM']:
+        return LJ_T['NUMX']
+    else:
+        return i2notu32(t)
+
+def ir_kptr(ir):
+    irname = IRS[ir['o']]['name']
+    assert irname == 'KPTR' or irname == 'KKPTR', 'wrong IR for ir_iptr()'
+    return mref('void *', cast('IRIns *', ir.address)[LJ_GC64]['ptr'])
+
+def ir_kgc(ir):
+    irname = IRS[ir['o']]['name']
+    assert irname == 'KGC', 'wrong IR for ir_kgc()'
+    return gcref(cast('IRIns *', ir.address)[LJ_GC64]['gcr'])
+
+def ir_knum(ir):
+    irname = IRS[ir['o']]['name']
+    assert irname == 'KNUM', 'wrong IR for ir_knum()'
+    return cast('IRIns *', ir.address)[1]['tv'].address
+
+def ir_kint64(ir):
+    irname = IRS[ir['o']]['name']
+    assert irname == 'KINT64', 'wrong IR for ir_knum()'
+    return cast('IRIns *', ir.address)[1]['tv'].address
 
 def proto_bc(proto):
     return cast('BCIns *', cast('char *', proto) + gdb.lookup_type('GCproto').sizeof)
@@ -631,7 +1105,7 @@ def dump_stack_slot(L, slot, base=None, top=None):
     base = base or L['base']
     top = top or L['top']
 
-    return '{addr}{padding} [ {B}{T}{M}] VALUE: {value}'.format(
+    res = '{addr}{padding} [ {B}{T}{M}] VALUE: {value}'.format(
         addr = strx64(slot),
         padding = PADDING,
         B = 'B' if slot == base else ' ',
@@ -639,6 +1113,7 @@ def dump_stack_slot(L, slot, base=None, top=None):
         M = 'M' if slot == mref('TValue *', L['maxstack']) else ' ',
         value = dump_tvalue(slot),
     )
+    return res
 
 def dump_stack(L, base=None, top=None):
     base = base or L['base']
@@ -818,6 +1293,209 @@ def dump_func(func):
         return 'C function @ {}\n'.format(strx64(func['f']))
     else:
         return 'fast function #{}\n'.format(int(ffid))
+
+
+# Special FP constant.
+CONST_BIAS = 2 ** 52 + 2 ** 51
+
+def dump_irk(trace, idx):
+    ref = idx + REF_BIAS
+    assert ref >= trace['nk'] and ref < REF_BIAS, 'bad constant in IR dump'
+    irins = trace['ir'][ref]
+    ir = IRS[irins['o']]
+    irname = ir['name']
+    slot = ''
+    if irname == 'KSLOT':
+        slot = ' KSLOT: @{}'.format(int(irins['op2']))
+        irins = trace['ir'][irins['op1']]
+        ir = IRS[irins['o']]
+        irname = ir['name']
+
+    irtype = irins['t']
+    irt = irt_type(irtype)
+    if irname == 'KPRI':
+        typename = typenames(irt_toitype(irtype))
+        # Trivial dump for primitives.
+        irk = tv_dumpers.get(typename, dump_lj_tv_invalid)(0)
+    elif irname == 'KINT':
+        irk = 'integer {}'.format(cast('int32_t', irins['i']))
+    elif irname == 'KGC':
+        typename = typenames(irt_toitype(irtype))
+        irk = gco_dumpers.get(typename, dump_lj_gco_invalid)(ir_kgc(irins))
+    elif irname == 'KKPTR':
+        addr = ir_kptr(irins)
+        if addr == G(L())['nilnode'].address:
+            return '[g->nilnode]' + slot
+        irk = '[{}]'.format(strx64(addr))
+    elif irname == 'KPTR':
+        irk = '[{}]'.format(strx64(ir_kptr(irins)))
+    elif irname == 'KNULL':
+        irk = 'NULL'
+    elif irname == 'KNUM':
+        tv_num = ir_knum(irins)
+        if float(tv_num['n']) == CONST_BIAS:
+            return 'bias'
+        irk = dump_lj_tv_numx(tv_num)
+    elif irname == 'KINT64':
+        irk = 'int64_t {}'.format(int(ir_kint64(irins)['u64']))
+    else:
+        return 'Unknown IRK: ' + irname
+    return irk + slot
+
+def dump_irins(irins, trace=None):
+    irop = irins['o']
+    if irop >= len(IRS):
+        return 'INVALID'
+
+    ir = IRS[irop]
+    irt = irins['t']
+    irname = ir['name']
+    is_sinksunk = irins['r'] == RID_SINK or irins['r'] == RID_SUNK
+    flags = '{is_sinksunk}{is_guard}{is_phi}'.format(
+        is_sinksunk = '}' if is_sinksunk else ' ',
+        is_guard = '>' if irt_isguard(irt) else ' ',
+        is_phi = '+' if irt_isphi(irt) else ' '
+    )
+
+    if not trace:
+        g = G(L(None))
+        compiling = jit_state(g) != 'IDLE'
+        assert compiling, 'attempt to dump IR for J.cur trace in bad VM state'
+        trace = J(g)['cur']
+
+    left = ''
+    right = ''
+    lisref = ir['left'] == 'ref'
+    risref = ir['right'] == 'ref'
+    op1 = int((irins['op1'] - REF_BIAS) if lisref else irins['op1'])
+    op2 = int((irins['op2'] - REF_BIAS) if risref else irins['op2'])
+
+    skip_right = False
+    # TODO: if  CALL \n el..
+    if irname == 'CNEW' and op2 == -1:
+        left = dump_irk(trace, op1)
+        skip_right = True
+    elif ir['left']:
+        if op1 < 0:
+            left = dump_irk(trace, op1)
+        elif ir['left'] == 'cst':
+            idx = irins - trace['ir'][REF_BIAS].address
+            left = dump_irk(trace, idx)
+        else:
+            left = ('{:04d}' if lisref else '#{:<3d}').format(op1)
+
+        if ir['right']:
+            if ir['right'] == 'lit':
+                litname = IR_LITNAMES.get(irname, None)
+                if litname:
+                    # Try to handle `lj_ir_ggfload()`.
+                    ggfname = None
+                    if irname == 'FLOAD' and left == 'nil' \
+                       and op2 >= len(IRFIELDS):
+                        ggfname = ggfname_by_offset(op2 << 2)
+
+                    if ggfname:
+                        right = ggfname
+                    else:
+                        right = litname(op2)
+                elif irname == 'UREFO' or irname == 'UREFC':
+                    right = '#{:<3d}'.format(op2 >> 8)
+                else:
+                   right = '#{:<3d}'.format(op2)
+            elif op2 < 0:
+                right = dump_irk(trace, op2)
+            else:
+                right = ('{:04d}').format(op2)
+
+    return '{flags} {type} {name:6} [{mode:2}] {left:<9s} {right}\n'.format(
+        flags = flags,
+        name = irname,
+        mode = ir['mode'],
+        type = IRTYPES[irt_type(irt)] if ir['name'] != 'LOOP' else '---',
+        left = (ir['left'] + ': ' + left) if ir['left'] else '',
+        right = (ir['right'] + ': ' + right) if ir['right'] \
+                                                and not skip_right else '',
+    )
+
+def dump_snap(trace, snapno, snap):
+    dump = '....         SNAP   #{:<3d} [ '.format(snapno)
+    snap_map = trace['snapmap'][snap['mapofs']].address
+    snap_entry_num = 0
+    for slot in range(0, snap['nslots']):
+        snap_entry = snap_map[snap_entry_num]
+        if snap_entry >> TREF_SHIFT == slot:
+            snap_entry_num += 1
+            ref = int((snap_entry & TREF_REFMASK) - REF_BIAS)
+            if ref < 0:
+                if int(snap_entry) == 0x1057fff:
+                    dump += '---- '
+                    continue
+                dump += '{{{const}}} '.format(const = dump_irk(trace, ref))
+            elif snap_entry & SNAP_SOFTFPNUM:
+                dump += '{:04d}/{:04d} '.format(ref, ref + 1)
+            else:
+                dump += '{:04d} '.format(ref)
+
+            if snap_entry & SNAP_FRAME:
+                dump += '| '
+        else:
+            dump += '---- '
+
+    dump += ']\n'
+    return dump
+
+def dump_trace(trace, flags):
+    dump = 'Trace {num} start\n\tproto: {start_pt}\n\tBC: {start_bc}\n'.format(
+        num = trace['traceno'],
+        start_pt = gcref(trace['startpt']),
+        start_bc = mref('BCIns *', trace['startpc']),
+    )
+
+    nins = trace['nins'] - REF_BIAS
+    dump += '---- TRACE IR\n'
+    nsnap = 0
+    snap = trace['snap'][nsnap]
+    snapref = snap['ref']
+    for irnum in range(1, nins):
+        irref = REF_BIAS + irnum
+        if 's' in flags and irref >= snapref and nsnap < trace['nsnap']:
+            dump += dump_snap(trace, nsnap, snap)
+            nsnap += 1
+            snap = trace['snap'][nsnap]
+            snapref = snap['ref']
+        dump += '{:04d} '.format(irnum)
+        dump += dump_irins(trace['ir'][irref], trace)
+    return dump
+
+def dump_tref(tref):
+    return '[{F}{C}] {type} {ref:#x}'.format(
+        F = 'F' if tref & TREF_FRAME else ' ',
+        C = 'C' if tref & TREF_CONT  else ' ',
+        type = IRTYPES[tref_type(tref)],
+        ref = tref_ref(tref)
+    )
+
+def dump_jslots():
+    g = G(L(None))
+    vmst = vm_state(g)
+    if not (vmst == 'RECORD' or vmst == 'OPT' or vmst == 'ASM'):
+        raise gdb.GdbError('Attempt to dump jslots outside of trace recording')
+    j = J(g)
+
+    dump = ''
+    maxslot = j['baseslot'] + j['maxslot']
+    first_base_slot = 1 + LJ_FR2
+    for n in reversed(range(first_base_slot, maxslot)):
+        tref = j['slot'][n]
+        ref = tref_ref(tref)
+        dump += '{nslot:04d} {base:1s} {tref}{const}\n'.format(
+            base = 'B' if j['slot'][n].address == j['base'] else ' ',
+            nslot = n,
+            tref = dump_tref(tref),
+            const = ' ' + dump_irk(j['cur'], ref - REF_BIAS) \
+                    if ref != 0 and ref < REF_BIAS else ''
+        )
+    return dump
 
 class LJBase(gdb.Command):
 
@@ -1063,6 +1741,37 @@ The constants or upvalues of the function are decoded after ';'.
     def invoke(self, arg, from_tty):
         gdb.write('{}'.format(dump_func(cast("GCfuncC *", parse_arg(arg)))))
 
+class LJDumpIR(LJBase):
+    '''
+lj-ir <IRIns *>
+
+    '''
+
+    def invoke(self, arg, from_tty):
+        gdb.write('{}'.format(dump_irins(cast('IRIns *', parse_arg(arg)))))
+
+class LJDumpTrace(LJBase):
+    '''
+lj-trace <GCtrace *>
+
+    '''
+
+    def invoke(self, arg, from_tty):
+        arg, flags = extract_flags(arg, 's')
+        gdb.write('{}'.format(dump_trace(
+            cast('GCtrace *', parse_arg(arg)),
+            flags
+        )))
+
+class LJDumpJSlots(LJBase):
+    '''
+lj-jslots <GCtrace *>
+    '''
+
+    def invoke(self, arg, from_tty):
+        gdb.write('{}'.format(dump_jslots()))
+
+
 def init(commands):
     global LJ_64, LJ_GC64, LJ_FR2, LJ_DUALNUM, LJ_TISNUM, PADDING
 
@@ -1131,6 +1840,9 @@ def load(event=None):
         'lj-bc': LJDumpBC,
         'lj-proto': LJDumpProto,
         'lj-func': LJDumpFunc,
+        'lj-ir': LJDumpIR,
+        'lj-trace': LJDumpTrace,
+        'lj-jslots': LJDumpJSlots,
     })
 
 load(None)
