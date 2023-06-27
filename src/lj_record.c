@@ -2313,6 +2313,9 @@ void lj_record_ins(jit_State *J)
 
   case BC_TSETM:
     rec_tsetm(J, ra, (BCReg)(J->L->top - J->L->base), (int32_t)rcv->u32.lo);
+    /* Shrink used slots to the table. */
+    if (ra <= J->maxslot)
+      J->maxslot = ra - 1;
     break;
 
   case BC_TNEW:
