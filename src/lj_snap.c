@@ -279,7 +279,10 @@ static BCReg snap_usedef(jit_State *J, uint8_t *udf,
 	  return 0;
 	}
       } else if (op == BC_VARG) {
-	return maxslot;  /* NYI: punt. */
+	BCReg base = bc_a(ins);
+	BCReg n_results = bc_b(ins);
+	BCReg top = n_results > 0 ? base + n_results - 1 : maxslot;
+	for (s = base; s < top; s++) USE_SLOT(s);
       } else if (op == BC_KNIL) {
 	for (s = bc_a(ins); s <= bc_d(ins); s++) DEF_SLOT(s);
       } else if (op == BC_TSETM) {
