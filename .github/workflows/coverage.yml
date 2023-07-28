@@ -58,3 +58,13 @@ jobs:
         working-directory: ${{ env.BUILDDIR }}
         env:
           COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: fetch git branches
+        run: |
+          git fetch --all
+          git checkout tarantool/master && git checkout -
+      - name: show code coverage for a patch
+        run: cmake --build ${{ env.BUILDDIR }} --parallel --target LuaJIT-patch-coverage
+        working-directory: ${{ env.BUILDDIR }}
+      - name: print code coverage for a patch
+        run: cat ./coverage/luajit-patch-coverage.md >> $GITHUB_STEP_SUMMARY
+        working-directory: ${{ env.BUILDDIR }}

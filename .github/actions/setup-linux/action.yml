@@ -17,4 +17,5 @@ runs:
         apt -y update
         apt -y install cmake gcc make ninja-build perl
         pip3 install gcovr
+        pip3 install diff-cover
       shell: bash
