@@ -53,7 +53,7 @@ set_source_files_properties(buildvm.c PROPERTIES
   OBJECT_DEPENDS "${DASM_HEADERS}"
 )
 set_target_properties(buildvm PROPERTIES
-  COMPILE_FLAGS "${HOST_C_FLAGS} ${TARGET_C_FLAGS}"
+  COMPILE_FLAGS "${HOST_C_FLAGS} ${TARGET_C_FLAGS} -fno-sanitize=all"
 )
 target_include_directories(buildvm PRIVATE
   ${LUAJIT_BINARY_DIR}
