@@ -3,9 +3,6 @@ local test = tap.test('gh-5688-tool-cli-flag'):skipcond({
   ['Profile tools are implemented for x86_64 only'] = jit.arch ~= 'x86' and
                                                       jit.arch ~= 'x64',
   ['Profile tools are implemented for Linux only'] = jit.os ~= 'Linux',
-  -- XXX: Tarantool integration is required to run this test properly.
-  -- luacheck: no global
-  ['No profile tools CLI option integration'] = _TARANTOOL,
 })
 
 test:plan(3)
