@@ -13,8 +13,6 @@
  * * Helpers assert macros:
  *   - assert_uint_equal if needed
  *   - assert_uint_not_equal if needed
- *   - assert_str_equal if needed
- *   - assert_str_not_equal if needed
  *   - assert_memory_equal if needed
  *   - assert_memory_not_equal if needed
  * * Pragmas.
@@ -213,5 +211,20 @@ static inline int todo(const char *reason)
 		       __FILE__, __LINE__, (got), (unexpected)		\
 	);								\
 } while (0)
+
+#define assert_str_equal(got, expected, n) do {				\
+	assert_general(strncmp(got, expected, n) == 0,			\
+		       ASSERT_EQUAL_FMT(int, "%d"),			\
+		       __FILE__, __LINE__, (got), (expected)		\
+	);								\
+} while (0)
+
+#define assert_str_not_equal(got, unexpected, n) do {			\
+	assert_general(strncmp(got, expected, n) != 0,			\
+		       ASSERT_NOT_EQUAL_FMT(int, "%d"),			\
+		       __FILE__, __LINE__, (got), (unexpected)		\
+	);								\
+} while (0)
+
 
 #endif /* TARANTOOL_LUAJIT_TEST_H */
