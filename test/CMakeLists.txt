@@ -78,6 +78,7 @@ add_subdirectory(PUC-Rio-Lua-5.1-tests)
 add_subdirectory(lua-Harness-tests)
 add_subdirectory(tarantool-c-tests)
 add_subdirectory(tarantool-tests)
+add_subdirectory(tarantool-debugger-tests)
 
 add_custom_target(${PROJECT_NAME}-test DEPENDS
   LuaJIT-tests
@@ -85,6 +86,8 @@ add_custom_target(${PROJECT_NAME}-test DEPENDS
   lua-Harness-tests
   tarantool-c-tests
   tarantool-tests
+  tarantool-gdb-tests
+  tarantool-lldb-tests
 )
 
 if(LUAJIT_USE_TEST)
