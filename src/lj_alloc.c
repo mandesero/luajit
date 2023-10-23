@@ -245,55 +245,72 @@ static uintptr_t mmap_probe_seed(void)
   return 1;  /* Punt. */
 }
 
+#include <sanitizer/asan_interface.h>
+
 static void *mmap_probe(size_t size)
 {
-  /* Hint for next allocation. Doesn't need to be thread-safe. */
-  static uintptr_t hint_addr = 0;
-  static uintptr_t hint_prng = 0;
-  int olderr = errno;
-  int retry;
-  for (retry = 0; retry < LJ_ALLOC_MMAP_PROBE_MAX; retry++) {
-    void *p = mmap((void *)hint_addr, size, MMAP_PROT, MMAP_FLAGS_PROBE, -1, 0);
-    uintptr_t addr = (uintptr_t)p;
-    if ((addr >> LJ_ALLOC_MBITS) == 0 && addr >= LJ_ALLOC_MMAP_PROBE_LOWER &&
-	((addr + size) >> LJ_ALLOC_MBITS) == 0) {
-      /* We got a suitable address. Bump the hint address. */
-      hint_addr = addr + size;
-      errno = olderr;
-      return p;
+    /* Hint for next allocation. Doesn't need to be thread-safe. */
+    static uintptr_t hint_addr = 0;
+    static uintptr_t hint_prng = 0;
+    int olderr = errno;
+    int retry;
+    for (retry = 0; retry < LJ_ALLOC_MMAP_PROBE_MAX; retry++)
+    {
+        void *p = mmap((void *)hint_addr, size, MMAP_PROT, MMAP_FLAGS_PROBE, -1, 0);
+        uintptr_t addr = (uintptr_t)p;
+
+        if ((addr >> LJ_ALLOC_MBITS) == 0 && addr >= LJ_ALLOC_MMAP_PROBE_LOWER &&
+            ((addr + size) >> LJ_ALLOC_MBITS) == 0)
+        {
+            /* We got a suitable address. Bump the hint address. */
+            hint_addr = addr + size;
+            errno = olderr;
+
+            ASAN_UNPOISON_MEMORY_REGION(p, size);
+            return p;
+        }
+        if (p != MFAIL)
+        {
+            munmap(p, size);
+            // ASAN_POISON_MEMORY_REGION(p, size);
+        }
+        else if (errno == ENOMEM)
+        {
+            return MFAIL;
+        }
+        if (hint_addr)
+        {
+            /* First, try linear probing. */
+            if (retry < LJ_ALLOC_MMAP_PROBE_LINEAR)
+            {
+                hint_addr += 0x1000000;
+                if (((hint_addr + size) >> LJ_ALLOC_MBITS) != 0)
+                    hint_addr = 0;
+                continue;
+            }
+            else if (retry == LJ_ALLOC_MMAP_PROBE_LINEAR)
+            {
+                /* Next, try a no-hint probe to get back an ASLR address. */
+                hint_addr = 0;
+                continue;
+            }
+        }
+        /* Finally, try pseudo-random probing. */
+        if (LJ_UNLIKELY(hint_prng == 0))
+        {
+            hint_prng = mmap_probe_seed();
+        }
+        /* The unsuitable address we got has some ASLR PRNG bits. */
+        hint_addr ^= addr & ~((uintptr_t)(LJ_PAGESIZE - 1));
+        do
+        { /* The PRNG itself is very weak, but see above. */
+            hint_prng = hint_prng * 1103515245 + 12345;
+            hint_addr ^= hint_prng * (uintptr_t)LJ_PAGESIZE;
+            hint_addr &= (((uintptr_t)1 << LJ_ALLOC_MBITS) - 1);
+        } while (hint_addr < LJ_ALLOC_MMAP_PROBE_LOWER);
     }
-    if (p != MFAIL) {
-      munmap(p, size);
-    } else if (errno == ENOMEM) {
-      return MFAIL;
-    }
-    if (hint_addr) {
-      /* First, try linear probing. */
-      if (retry < LJ_ALLOC_MMAP_PROBE_LINEAR) {
-	hint_addr += 0x1000000;
-	if (((hint_addr + size) >> LJ_ALLOC_MBITS) != 0)
-	  hint_addr = 0;
-	continue;
-      } else if (retry == LJ_ALLOC_MMAP_PROBE_LINEAR) {
-	/* Next, try a no-hint probe to get back an ASLR address. */
-	hint_addr = 0;
-	continue;
-      }
-    }
-    /* Finally, try pseudo-random probing. */
-    if (LJ_UNLIKELY(hint_prng == 0)) {
-      hint_prng = mmap_probe_seed();
-    }
-    /* The unsuitable address we got has some ASLR PRNG bits. */
-    hint_addr ^= addr & ~((uintptr_t)(LJ_PAGESIZE-1));
-    do {  /* The PRNG itself is very weak, but see above. */
-      hint_prng = hint_prng * 1103515245 + 12345;
-      hint_addr ^= hint_prng * (uintptr_t)LJ_PAGESIZE;
-      hint_addr &= (((uintptr_t)1 << LJ_ALLOC_MBITS)-1);
-    } while (hint_addr < LJ_ALLOC_MMAP_PROBE_LOWER);
-  }
-  errno = olderr;
-  return MFAIL;
+    errno = olderr;
+    return MFAIL;
 }
 
 #endif
@@ -324,6 +341,7 @@ static void *mmap_map32(size_t size)
       return mmap_probe(size);
     }
 #endif
+    ASAN_POISON_MEMORY_REGION(ptr, size);
     return ptr;
   }
 }
@@ -362,6 +380,10 @@ static int CALL_MUNMAP(void *ptr, size_t size)
 {
   int olderr = errno;
   int ret = munmap(ptr, size);
+
+  if (!ret)
+    ASAN_POISON_MEMORY_REGION(ptr, size);
+
   errno = olderr;
   return ret;
 }
@@ -371,7 +393,21 @@ static int CALL_MUNMAP(void *ptr, size_t size)
 static void *CALL_MREMAP_(void *ptr, size_t osz, size_t nsz, int flags)
 {
   int olderr = errno;
+
+  void* tmp = malloc(osz);
+  if (tmp != NULL) {
+      memcpy(tmp, ptr, osz);
+  }
+
   ptr = mremap(ptr, osz, nsz, flags);
+  
+  if (ptr != MAP_FAILED)
+  {
+    ASAN_POISON_MEMORY_REGION(tmp, osz);
+    ASAN_UNPOISON_MEMORY_REGION(ptr, nsz);
+  }
+  
+  free(tmp);
   errno = olderr;
   return ptr;
 }
@@ -1356,73 +1392,96 @@ static LJ_NOINLINE void *lj_alloc_malloc(void *msp, size_t nsize)
 
 static LJ_NOINLINE void *lj_alloc_free(void *msp, void *ptr)
 {
-  if (ptr != 0) {
-    mchunkptr p = mem2chunk(ptr);
-    mstate fm = (mstate)msp;
-    size_t psize = chunksize(p);
-    mchunkptr next = chunk_plus_offset(p, psize);
-    if (!pinuse(p)) {
-      size_t prevsize = p->prev_foot;
-      if ((prevsize & IS_DIRECT_BIT) != 0) {
-	prevsize &= ~IS_DIRECT_BIT;
-	psize += prevsize + DIRECT_FOOT_PAD;
-	CALL_MUNMAP((char *)p - prevsize, psize);
-	return NULL;
-      } else {
-	mchunkptr prev = chunk_minus_offset(p, prevsize);
-	psize += prevsize;
-	p = prev;
-	/* consolidate backward */
-	if (p != fm->dv) {
-	  unlink_chunk(fm, p, prevsize);
-	} else if ((next->head & INUSE_BITS) == INUSE_BITS) {
-	  fm->dvsize = psize;
-	  set_free_with_pinuse(p, psize, next);
-	  return NULL;
-	}
-      }
-    }
-    if (!cinuse(next)) {  /* consolidate forward */
-      if (next == fm->top) {
-	size_t tsize = fm->topsize += psize;
-	fm->top = p;
-	p->head = tsize | PINUSE_BIT;
-	if (p == fm->dv) {
-	  fm->dv = 0;
-	  fm->dvsize = 0;
-	}
-	if (tsize > fm->trim_check)
-	  alloc_trim(fm, 0);
-	return NULL;
-      } else if (next == fm->dv) {
-	size_t dsize = fm->dvsize += psize;
-	fm->dv = p;
-	set_size_and_pinuse_of_free_chunk(p, dsize);
-	return NULL;
-      } else {
-	size_t nsize = chunksize(next);
-	psize += nsize;
-	unlink_chunk(fm, next, nsize);
-	set_size_and_pinuse_of_free_chunk(p, psize);
-	if (p == fm->dv) {
-	  fm->dvsize = psize;
-	  return NULL;
-	}
-      }
-    } else {
-      set_free_with_pinuse(p, psize, next);
+    if (ptr != 0)
+    {
+        mchunkptr p = mem2chunk(ptr);
+        mstate fm = (mstate)msp;
+        size_t psize = chunksize(p);
+        mchunkptr next = chunk_plus_offset(p, psize);
+
+        if (!pinuse(p))
+        {
+            size_t prevsize = p->prev_foot;
+            if ((prevsize & IS_DIRECT_BIT) != 0)
+            {
+                prevsize &= ~IS_DIRECT_BIT;
+                psize += prevsize + DIRECT_FOOT_PAD;
+                CALL_MUNMAP((char *)p - prevsize, psize);
+                return NULL;
+            }
+            else
+            {
+                mchunkptr prev = chunk_minus_offset(p, prevsize);
+                psize += prevsize;
+                p = prev;
+                /* consolidate backward */
+                if (p != fm->dv)
+                {
+                    unlink_chunk(fm, p, prevsize);
+                }
+                else if ((next->head & INUSE_BITS) == INUSE_BITS)
+                {
+                    fm->dvsize = psize;
+                    set_free_with_pinuse(p, psize, next);
+                    return NULL;
+                }
+            }
+        }
+        if (!cinuse(next))
+        { /* consolidate forward */
+            if (next == fm->top)
+            {
+                size_t tsize = fm->topsize += psize;
+                fm->top = p;
+                p->head = tsize | PINUSE_BIT;
+                if (p == fm->dv)
+                {
+                    fm->dv = 0;
+                    fm->dvsize = 0;
+                }
+                if (tsize > fm->trim_check)
+                    alloc_trim(fm, 0);
+                return NULL;
+            }
+            else if (next == fm->dv)
+            {
+                size_t dsize = fm->dvsize += psize;
+                fm->dv = p;
+                set_size_and_pinuse_of_free_chunk(p, dsize);
+                return NULL;
+            }
+            else
+            {
+                size_t nsize = chunksize(next);
+                psize += nsize;
+                unlink_chunk(fm, next, nsize);
+                set_size_and_pinuse_of_free_chunk(p, psize);
+                if (p == fm->dv)
+                {
+                    fm->dvsize = psize;
+                    return NULL;
+                }
+            }
+        }
+        else
+        {
+            set_free_with_pinuse(p, psize, next);
+        }
+
+        if (is_small(psize))
+        {
+            insert_small_chunk(fm, p, psize);
+        }
+        else
+        {
+            tchunkptr tp = (tchunkptr)p;
+            insert_large_chunk(fm, tp, psize);
+            if (--fm->release_checks == 0)
+                release_unused_segments(fm);
+        }
     }
 
-    if (is_small(psize)) {
-      insert_small_chunk(fm, p, psize);
-    } else {
-      tchunkptr tp = (tchunkptr)p;
-      insert_large_chunk(fm, tp, psize);
-      if (--fm->release_checks == 0)
-	release_unused_segments(fm);
-    }
-  }
-  return NULL;
+    return NULL;
 }
 
 static LJ_NOINLINE void *lj_alloc_realloc(void *msp, void *ptr, size_t nsize)
