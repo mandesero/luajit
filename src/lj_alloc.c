@@ -247,13 +247,23 @@ static uintptr_t mmap_probe_seed(void)
 
 #include <sanitizer/asan_interface.h>
 
-static void *mmap_probe(size_t size)
+void* align_up(void* ptr, size_t alignment) {
+    uintptr_t p = (uintptr_t)ptr;
+    return (void*)((p + alignment - 1) & ~(alignment - 1));
+}
+
+static void *mmap_probe(size_t _size)
 {
     /* Hint for next allocation. Doesn't need to be thread-safe. */
     static uintptr_t hint_addr = 0;
     static uintptr_t hint_prng = 0;
     int olderr = errno;
     int retry;
+
+
+    size_t size = (size_t)align_up((void *)(_size + 16), 4096);
+
+    // size_t size = (size_t)align_up((void *)(_size + 16), 16);
     for (retry = 0; retry < LJ_ALLOC_MMAP_PROBE_MAX; retry++)
     {
         void *p = mmap((void *)hint_addr, size, MMAP_PROT, MMAP_FLAGS_PROBE, -1, 0);
@@ -266,8 +276,16 @@ static void *mmap_probe(size_t size)
             hint_addr = addr + size;
             errno = olderr;
 
-            ASAN_UNPOISON_MEMORY_REGION(p, size);
-            return p;
+            // выравниваем указатель на 8
+            void* aligned_memory = align_up(p, 8);
+            // ASAN_POISON_MEMORY_REGION(p, aligned_memory - p);
+            // ASAN_POISON_MEMORY_REGION(aligned_memory + _size, (uintptr_t)p + size - (uintptr_t)(aligned_memory + _size));
+            // ASAN_UNPOISON_MEMORY_REGION(aligned_memory, _size);
+
+            ASAN_POISON_MEMORY_REGION(p, size);
+            ASAN_UNPOISON_MEMORY_REGION(aligned_memory, _size);
+
+            return aligned_memory;
         }
         if (p != MFAIL)
         {
@@ -341,7 +359,7 @@ static void *mmap_map32(size_t size)
       return mmap_probe(size);
     }
 #endif
-    ASAN_POISON_MEMORY_REGION(ptr, size);
+    // ASAN_POISON_MEMORY_REGION(ptr + sizeof(uint32_t), _size);
     return ptr;
   }
 }
@@ -379,11 +397,13 @@ static void init_mmap(void)
 static int CALL_MUNMAP(void *ptr, size_t size)
 {
   int olderr = errno;
+
+  void* aligned_memory = align_up(ptr, 8);
+  ASAN_POISON_MEMORY_REGION(aligned_memory, (size_t)align_up((void *)(size + 16), 4096));
+
+  // ASAN_POISON_MEMORY_REGION(aligned_memory, (size_t)align_up((void *)(size + 16), 16));
+
   int ret = munmap(ptr, size);
-
-  if (!ret)
-    ASAN_POISON_MEMORY_REGION(ptr, size);
-
   errno = olderr;
   return ret;
 }
@@ -394,20 +414,21 @@ static void *CALL_MREMAP_(void *ptr, size_t osz, size_t nsz, int flags)
 {
   int olderr = errno;
 
-  void* tmp = malloc(osz);
-  if (tmp != NULL) {
-      memcpy(tmp, ptr, osz);
-  }
+  void* aligned_memory = align_up(ptr, 8);
+  // size_t old_size = (size_t)align_up((void *)(osz + 16), 4096);
+  size_t new_size = (size_t)align_up((void *)(nsz + 16), 4096);
+  
+  // size_t old_size = (size_t)align_up((void *)(osz + 16), 16);
+  // size_t new_size = (size_t)align_up((void *)(nsz + 16), 16);
+  // ASAN_POISON_MEMORY_REGION(aligned_memory + old_size, new_size - old_size);
 
-  ptr = mremap(ptr, osz, nsz, flags);
-  
-  if (ptr != MAP_FAILED)
-  {
-    ASAN_POISON_MEMORY_REGION(tmp, osz);
-    ASAN_UNPOISON_MEMORY_REGION(ptr, nsz);
-  }
-  
-  free(tmp);
+  ASAN_POISON_MEMORY_REGION(ptr, osz);
+
+  ptr = mremap(ptr, osz, new_size, flags);
+
+  void *tmp = align_up(ptr, 8);
+  ASAN_POISON_MEMORY_REGION(ptr, new_size);
+  ASAN_UNPOISON_MEMORY_REGION(tmp, nsz);
   errno = olderr;
   return ptr;
 }
