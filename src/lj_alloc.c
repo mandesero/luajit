@@ -434,26 +434,44 @@ static void init_mmap(void)
 
 #include <sanitizer/common_interface_defs.h>
 
+#define FREE_BLOCK_SIZE uint8_t
+
+void check_mem_for_free(void *ptr, size_t size) {
+  uint8_t *chr_ptr = (char *)ptr;
+  for (size_t i=0; i < size; ++i) {
+    chr_ptr[i] = chr_ptr[i];
+  }
+}
+
 static int CALL_MUNMAP(void *ptr, size_t size)
 {
   int olderr = errno;
   int ret;
-  unsigned long offset = 0;
-  for (unsigned long i=0; i < size / sizeof(unsigned long); ++i) {
-    unsigned long t = ((unsigned long *)(ptr))[i];
-    ret = munmap(ptr + offset, sizeof(unsigned long));
-    offset += sizeof(unsigned long);
-  }
 
-  for (char i=0; i < size % sizeof(unsigned long); ++i) {
-    char t = ((char *)(ptr))[i];
-    ret = munmap(ptr + offset, sizeof(char));
-    offset += sizeof(char);
-  }
+  void *aligned_ptr = align_up(ptr, ADDR_ALIGMENT);
+  if (aligned_ptr == ptr) {
+    
+    // FREE_BLOCK_SIZE offset = 0;
+    // for (FREE_BLOCK_SIZE i=0; i < size / sizeof(FREE_BLOCK_SIZE); ++i) {
+    //   ((FREE_BLOCK_SIZE *)ptr)[i] = ((FREE_BLOCK_SIZE *)ptr)[i];
+    //   ret = munmap(ptr + offset, sizeof(FREE_BLOCK_SIZE));
+    //   offset += sizeof(FREE_BLOCK_SIZE);
+    // }
 
-  // int ret = munmap(ptr, size);
+    // for (uint8_t i=0; i < size % sizeof(FREE_BLOCK_SIZE); ++i) {
+    //   ((uint8_t *)ptr)[i] = ((uint8_t *)ptr)[i];
+    //   ret = munmap(ptr + offset, sizeof(uint8_t));
+    //   offset += sizeof(uint8_t);
+    // }
+
+    check_mem_for_free(ptr, size);
+    int ret = munmap(ptr, size);
+
+  } else {
+    // ...
+    int ret = munmap(ptr, size);
+  }
   ASAN_POISON_MEMORY_REGION(ptr, size);
-
   errno = olderr;
   return ret;
 }
