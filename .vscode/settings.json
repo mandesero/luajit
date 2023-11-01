@@ -1,6 +1,15 @@
 {
     "files.associations": {
         "asan_interface.h": "c",
-        "common_interface_defs.h": "c"
+        "common_interface_defs.h": "c",
+        "lj_alloc.h": "c",
+        "lj_def.h": "c",
+        "lua.h": "c",
+        "test.h": "c",
+        "utils.h": "c",
+        "array": "c",
+        "string_view": "c",
+        "initializer_list": "c",
+        "utility": "c"
     }
 }

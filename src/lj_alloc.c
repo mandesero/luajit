@@ -247,15 +247,26 @@ static uintptr_t mmap_probe_seed(void)
 
 #include <sanitizer/asan_interface.h>
 
+/* размер readzone от 16 до 2048 байт */
+#define READZONE_SIZE 16
+#define FREADZONE_SIZE 2 * READZONE_SIZE
+/* кратность размера выделяемой памяти */
+#define SIZE_ALIGMENT 8
+/* кратность адреса выделяемой памяти */
+#define ADDR_ALIGMENT 8
+
+
 void* align_up(void* ptr, size_t alignment) {
     uintptr_t p = (uintptr_t)ptr;
     return (void*)((p + alignment - 1) & ~(alignment - 1));
 }
 
-// размер readzone от 16 до 2048 байт
-#define READZONE_SIZE 32
+size_t align_up_size(size_t size, size_t alignment) {
+    return ((size + FREADZONE_SIZE + ADDR_ALIGMENT + alignment - 1) & ~(alignment - 1));
+}
 
-static void *mmap_probe(size_t _size)
+
+static void *mmap_probe(size_t size)
 {
     /* Hint for next allocation. Doesn't need to be thread-safe. */
     static uintptr_t hint_addr = 0;
@@ -263,31 +274,39 @@ static void *mmap_probe(size_t _size)
     int olderr = errno;
     int retry;
 
-
-    size_t size = (size_t)align_up((void *)(_size + READZONE_SIZE), 8);
+    /* размер памяти для выделения = (size + FREADZONE_SIZE + ADDR_ALIGMENT) приводим к ближайшему кратному SIZE_ALIGMENT сверху */
+    size_t new_size = align_up_size(size, SIZE_ALIGMENT);
 
     for (retry = 0; retry < LJ_ALLOC_MMAP_PROBE_MAX; retry++)
     {
-        void *p = mmap((void *)hint_addr, size, MMAP_PROT, MMAP_FLAGS_PROBE, -1, 0);
+        /* пытаемся выделить new_size памяти*/
+        void *p = mmap((void *)hint_addr, new_size, MMAP_PROT, MMAP_FLAGS_PROBE, -1, 0);
         uintptr_t addr = (uintptr_t)p;
 
+        /* проверка, что полученный адрес лежит в диапазоне [LJ_ALLOC_MMAP_PROBE_LOWER, 2^LJ_ALLOC_MBITS - 1]*/
         if ((addr >> LJ_ALLOC_MBITS) == 0 && addr >= LJ_ALLOC_MMAP_PROBE_LOWER &&
-            ((addr + size) >> LJ_ALLOC_MBITS) == 0)
+            ((addr + new_size) >> LJ_ALLOC_MBITS) == 0)
         {
             /* We got a suitable address. Bump the hint address. */
             hint_addr = addr + size;
             errno = olderr;
 
-            // уже выровненный указатель на 8??? (пока считаю, что да)
+            /* Необходимо выравнить указатель к ближайшему кратному ADDR_ALIGMENT сверху */
 
-            // сначала отравляем всю выделенную память (rz включены)
-            ASAN_POISON_MEMORY_REGION(p, size);
+            void *aligned_ptr = align_up(p, ADDR_ALIGMENT);
 
-            void *aligned_memory = p + READZONE_SIZE / 2;
-            // разотравляем возвращаемую память
-            ASAN_UNPOISON_MEMORY_REGION(aligned_memory, size);
+            /* чистый размер (запрашиваемая память + размер READZONE) */
+            new_size = new_size - ADDR_ALIGMENT;
 
-            return aligned_memory;
+            /* сначала отравляем всю выделенную память (rz включены) */
+            ASAN_POISON_MEMORY_REGION(p, new_size);
+
+            p = aligned_ptr + READZONE_SIZE;
+
+            /* разотравляем возвращаемую память */
+            ASAN_UNPOISON_MEMORY_REGION(p, size);
+
+            return p;
         }
         if (p != MFAIL)
         {
@@ -418,18 +437,21 @@ static void init_mmap(void)
 static int CALL_MUNMAP(void *ptr, size_t size)
 {
   int olderr = errno;
+  int ret;
+  unsigned long offset = 0;
+  for (unsigned long i=0; i < size / sizeof(unsigned long); ++i) {
+    unsigned long t = ((unsigned long *)(ptr))[i];
+    ret = munmap(ptr + offset, sizeof(unsigned long));
+    offset += sizeof(unsigned long);
+  }
 
-  // нужно проверить, что удаляемая память доступна для удаления
+  for (char i=0; i < size % sizeof(unsigned long); ++i) {
+    char t = ((char *)(ptr))[i];
+    ret = munmap(ptr + offset, sizeof(char));
+    offset += sizeof(char);
+  }
 
-  // for (void *tmp = ptr; tmp != (ptr + size); tmp++)
-  // {
-  //   if (__asan_address_is_poisoned(tmp))
-  //     __sanitizer_report_error_summary("free rz\n");
-  // }
-  
-  // ???
-
-  int ret = munmap(ptr, size);
+  // int ret = munmap(ptr, size);
   ASAN_POISON_MEMORY_REGION(ptr, size);
 
   errno = olderr;
