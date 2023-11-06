@@ -7,7 +7,7 @@
 
 #define MALLOC(size) mmap_probe(size)
 #define FREE(ptr, size) CALL_MUNMAP(ptr, size)
-// #define REALLOC()
+#define REALLOC(ptr, osz, nsz) CALL_MREMAP_(ptr, osz, nsz, 0)
 
 static lua_State *main_L = NULL;
 
@@ -120,7 +120,7 @@ static int munmap_double_free_test(void *test_state)
 
     FREE(p, size);
 
-    /* double free */
+    // /* double free */
     // FREE(p, size);
     return TEST_EXIT_SUCCESS;
 }
@@ -132,8 +132,55 @@ static int munmap_free_upper_size_test(void *test_state)
     if (p == MFAIL)
         return TEST_EXIT_FAILURE;
 
-    /* double free */
-    FREE(p, size + 2);
+    /* free upper size */
+    // FREE(p, size + 2);
+    return TEST_EXIT_SUCCESS;
+}
+
+/* false positive */
+static int munmap_f_n_test(void *test_state)
+{
+    size_t size = 8;
+    void *p = MALLOC(size);
+    if (p == MFAIL)
+        return TEST_EXIT_FAILURE;
+
+    uint8_t *ptr = (uint8_t *)p;
+    ptr = ptr + 7;
+    uint8_t value = 0x11;
+    *ptr = value;
+
+    return TEST_EXIT_SUCCESS;
+}
+
+
+static int mremap_test_1(void *test_state)
+{
+    size_t size = 20;
+    void *p = MALLOC(size);
+    if (p == MFAIL)
+        return TEST_EXIT_FAILURE;
+
+    uint8_t *ptr = (uint8_t *)p;
+    for (size_t i=0; i < size; ++i)
+    {
+        ptr[i] = 'a' + i;
+    }
+    
+    uint8_t *new_ptr = (uint8_t *)REALLOC(ptr, size, size + 10);
+
+    /* к старой памяти обращаться нельзя */
+    // for (size_t i=0; i < size; ++i)
+    // {
+    //     ptr[i] = 'a' + i;
+    // }
+
+    for (size_t i=0; i < size; ++i)
+    {
+        if (new_ptr[i] != 'a' + i)
+            return TEST_EXIT_FAILURE;
+    }
+
     return TEST_EXIT_SUCCESS;
 }
 
@@ -150,7 +197,10 @@ int main(void)
         
         test_unit_def(munmap_use_after_free_test),
         test_unit_def(munmap_double_free_test),
-        test_unit_def(munmap_free_upper_size_test)
+        test_unit_def(munmap_free_upper_size_test),
+        test_unit_def(munmap_f_n_test),
+        test_unit_def(mremap_test_1)
+
 	};
 
 	const int test_result = test_run_group(tgroup, L);

@@ -249,6 +249,7 @@ static uintptr_t mmap_probe_seed(void)
 
 /* размер readzone от 16 до 2048 байт */
 #define READZONE_SIZE 16
+/* общий размер readzon вокруг аллокации */
 #define FREADZONE_SIZE 2 * READZONE_SIZE
 /* кратность размера выделяемой памяти */
 #define SIZE_ALIGMENT 8
@@ -361,13 +362,12 @@ static void *mmap_probe(size_t size)
 #define LJ_ALLOC_MMAP32_START	((uintptr_t)0)
 #endif
 
-static void *mmap_map32(size_t _size)
+static void *mmap_map32(size_t size)
 {
-  size_t size = (size_t)align_up((void *)(_size + READZONE_SIZE), 8) + 8;
 #if LJ_ALLOC_MMAP_PROBE
   static int fallback = 0;
   if (fallback)
-    return mmap_probe(_size);
+    return mmap_probe(size);
 #endif
   {
     int olderr = errno;
@@ -377,28 +377,10 @@ static void *mmap_map32(size_t _size)
 #if LJ_ALLOC_MMAP_PROBE
     if (ptr == MFAIL) {
       fallback = 1;
-      return mmap_probe(_size);
+      return mmap_probe(size);
     }
 #endif
-    
-    void *tmp = align_up(ptr, 8);
-    size_t k = tmp - ptr;
-
-    if (k)
-      munmap(ptr, k);
-
-    void *rezerved = tmp + size - 8;
-    munmap(rezerved, 8 - k);
-    ptr = tmp;
-
-    // сначала отравляем всю выделенную память (rz включены)
-    ASAN_POISON_MEMORY_REGION(ptr, size - 8);
-
-    void *aligned_memory = ptr + READZONE_SIZE / 2;
-
-    // разотравляем возвращаемую память
-    ASAN_UNPOISON_MEMORY_REGION(aligned_memory, _size);
-    return aligned_memory;
+    return ptr;
   }
 }
 
@@ -432,46 +414,28 @@ static void init_mmap(void)
 
 #endif
 
-#include <sanitizer/common_interface_defs.h>
-
-#define FREE_BLOCK_SIZE uint8_t
-
-void check_mem_for_free(void *ptr, size_t size) {
-  uint8_t *chr_ptr = (char *)ptr;
-  for (size_t i=0; i < size; ++i) {
-    chr_ptr[i] = chr_ptr[i];
-  }
-}
+#define FREE_BLOCK_TYPE uint64_t
+#define FREE_BLOCK_SIZE sizeof(FREE_BLOCK_TYPE)
 
 static int CALL_MUNMAP(void *ptr, size_t size)
 {
   int olderr = errno;
-  int ret;
 
-  void *aligned_ptr = align_up(ptr, ADDR_ALIGMENT);
-  if (aligned_ptr == ptr) {
-    
-    // FREE_BLOCK_SIZE offset = 0;
-    // for (FREE_BLOCK_SIZE i=0; i < size / sizeof(FREE_BLOCK_SIZE); ++i) {
-    //   ((FREE_BLOCK_SIZE *)ptr)[i] = ((FREE_BLOCK_SIZE *)ptr)[i];
-    //   ret = munmap(ptr + offset, sizeof(FREE_BLOCK_SIZE));
-    //   offset += sizeof(FREE_BLOCK_SIZE);
-    // }
-
-    // for (uint8_t i=0; i < size % sizeof(FREE_BLOCK_SIZE); ++i) {
-    //   ((uint8_t *)ptr)[i] = ((uint8_t *)ptr)[i];
-    //   ret = munmap(ptr + offset, sizeof(uint8_t));
-    //   offset += sizeof(uint8_t);
-    // }
-
-    check_mem_for_free(ptr, size);
-    int ret = munmap(ptr, size);
-
-  } else {
-    // ...
-    int ret = munmap(ptr, size);
+  /* Проверка доступности памяти */
+  FREE_BLOCK_TYPE *tmp = (FREE_BLOCK_TYPE *)ptr;
+  for (int i=0; i < size / FREE_BLOCK_SIZE; ++i)
+  {
+    tmp[i] = tmp[i];
   }
+  uint8_t *b = (uint8_t *)(ptr) + (size - size % FREE_BLOCK_SIZE);
+  for (int i=0; i < size % FREE_BLOCK_SIZE; ++i)
+  {
+    b[i] = b[i];
+  }
+
+  int ret = munmap(ptr, size);
   ASAN_POISON_MEMORY_REGION(ptr, size);
+
   errno = olderr;
   return ret;
 }
@@ -481,28 +445,25 @@ static int CALL_MUNMAP(void *ptr, size_t size)
 static void *CALL_MREMAP_(void *ptr, size_t osz, size_t nsz, int flags)
 {
   int olderr = errno;
+  uint8_t *new_ptr = (uint8_t *)mmap_probe(nsz);
 
-  size_t size = (size_t)align_up((void *)(nsz + READZONE_SIZE), 8) + 8;
-  
+  for (size_t i=0; i < osz; ++i)
+  {
+    new_ptr[i] = ((uint8_t *)ptr)[i];
+  }
+
+  CALL_MUNMAP(ptr, osz);
   ASAN_POISON_MEMORY_REGION(ptr, osz);
-
-  ptr = mremap(ptr, osz, size, flags);
-
-  void *tmp = align_up(ptr, 8);
-  size_t k = tmp - ptr;
-
-  if (k)
-    munmap(ptr, k);
-
-  void *rezerved = tmp + size - 8;
-  munmap(rezerved, 8 - k);
-  ptr = tmp;
-  ptr = ptr + READZONE_SIZE / 2;
-
-  // разотравляем возвращаемую память
-  ASAN_UNPOISON_MEMORY_REGION(ptr, nsz);
+  ptr = (void *)new_ptr;
   errno = olderr;
   return ptr;
+
+
+  /* basic */
+  // int olderr = errno;
+  // ptr = mremap(ptr, osz, nsz, flags);
+  // errno = olderr;
+  // return ptr;
 }
 
 #define CALL_MREMAP(addr, osz, nsz, mv) CALL_MREMAP_((addr), (osz), (nsz), (mv))
