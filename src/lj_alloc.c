@@ -434,8 +434,10 @@ static int CALL_MUNMAP(void *ptr, size_t size)
   }
 
   int ret = munmap(ptr, size);
-  ASAN_POISON_MEMORY_REGION(ptr, size);
-
+  if (ret == 0) {
+    ASAN_POISON_MEMORY_REGION(ptr, size);
+  }
+  
   errno = olderr;
   return ret;
 }
@@ -445,25 +447,21 @@ static int CALL_MUNMAP(void *ptr, size_t size)
 static void *CALL_MREMAP_(void *ptr, size_t osz, size_t nsz, int flags)
 {
   int olderr = errno;
-  uint8_t *new_ptr = (uint8_t *)mmap_probe(nsz);
-
-  for (size_t i=0; i < osz; ++i)
-  {
-    new_ptr[i] = ((uint8_t *)ptr)[i];
+  void *new_ptr = mmap_probe(nsz);
+  if (new_ptr != MFAIL) {
+    int res = *((int *)memcpy(new_ptr, ptr, osz));
+    if (res != 0) {
+      CALL_MUNMAP(ptr, osz);
+      ASAN_POISON_MEMORY_REGION(ptr, osz);
+      ptr = (void *)new_ptr;
+    } else {
+      ptr = mremap(ptr, osz, nsz, flags);
+    }
+  } else {
+    ptr = mremap(ptr, osz, nsz, flags);
   }
-
-  CALL_MUNMAP(ptr, osz);
-  ASAN_POISON_MEMORY_REGION(ptr, osz);
-  ptr = (void *)new_ptr;
   errno = olderr;
   return ptr;
-
-
-  /* basic */
-  // int olderr = errno;
-  // ptr = mremap(ptr, osz, nsz, flags);
-  // errno = olderr;
-  // return ptr;
 }
 
 #define CALL_MREMAP(addr, osz, nsz, mv) CALL_MREMAP_((addr), (osz), (nsz), (mv))
