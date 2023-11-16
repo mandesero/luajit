@@ -371,7 +371,10 @@ static void *mmap_map32(size_t size)
 #endif
   {
     int olderr = errno;
-    void *ptr = mmap((void *)LJ_ALLOC_MMAP32_START, size, MMAP_PROT, MAP_32BIT|MMAP_FLAGS, -1, 0);
+
+
+    size_t new_size = align_up_size(size, SIZE_ALIGMENT);
+    void *ptr = mmap((void *)LJ_ALLOC_MMAP32_START, new_size, MMAP_PROT, MAP_32BIT|MMAP_FLAGS, -1, 0);
     errno = olderr;
     /* This only allows 1GB on Linux. So fallback to probing to get 2GB. */
 #if LJ_ALLOC_MMAP_PROBE
@@ -380,9 +383,37 @@ static void *mmap_map32(size_t size)
       return mmap_probe(size);
     }
 #endif
+
+    void *aligned_ptr = align_up(ptr, ADDR_ALIGMENT);
+    new_size = new_size - ADDR_ALIGMENT;
+    ASAN_POISON_MEMORY_REGION(ptr, new_size);
+    ptr = aligned_ptr + READZONE_SIZE;
+    ASAN_UNPOISON_MEMORY_REGION(ptr, size);
     return ptr;
   }
 }
+
+// static void *mmap_map32(size_t size)
+// {
+// #if LJ_ALLOC_MMAP_PROBE
+//   static int fallback = 0;
+//   if (fallback)
+//     return mmap_probe(size);
+// #endif
+//   {
+//     int olderr = errno;
+//     void *ptr = mmap((void *)LJ_ALLOC_MMAP32_START, size, MMAP_PROT, MAP_32BIT|MMAP_FLAGS, -1, 0);
+//     errno = olderr;
+//     /* This only allows 1GB on Linux. So fallback to probing to get 2GB. */
+// #if LJ_ALLOC_MMAP_PROBE
+//     if (ptr == MFAIL) {
+//       fallback = 1;
+//       return mmap_probe(size);
+//     }
+// #endif
+//     return ptr;
+//   }
+// }
 
 #endif
 
