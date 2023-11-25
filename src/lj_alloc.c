@@ -245,111 +245,102 @@ static uintptr_t mmap_probe_seed(void)
   return 1;  /* Punt. */
 }
 
+#if LUAJIT_USE_ASAN
+
 #include <sanitizer/asan_interface.h>
 
-/* размер readzone от 16 до 2048 байт */
-#define READZONE_SIZE 16
-/* общий размер readzon вокруг аллокации */
+/* recommended redzone size from 16 to 2048 bytes (must be a multiple of 8) */
+#define READZONE_SIZE 32
+
+/* total readzon size around allocation */
 #define FREADZONE_SIZE 2 * READZONE_SIZE
-/* кратность размера выделяемой памяти */
+
+/* multiple of the allocated memory size */
 #define SIZE_ALIGMENT 8
-/* кратность адреса выделяемой памяти */
+
+/* multiple of the allocated memory address */
 #define ADDR_ALIGMENT 8
 
+#define FREE_BLOCK_TYPE uint64_t
 
-void* align_up(void* ptr, size_t alignment) {
-    uintptr_t p = (uintptr_t)ptr;
-    return (void*)((p + alignment - 1) & ~(alignment - 1));
+#define FREE_BLOCK_SIZE sizeof(FREE_BLOCK_TYPE)
+
+/* casting the address to the nearest multiple of alignment from above */
+void *align_up(void* ptr, size_t alignment)
+{
+  uintptr_t p = (uintptr_t)ptr;
+  return (void*)((p + alignment - 1) & ~(alignment - 1));
 }
 
-size_t align_up_size(size_t size, size_t alignment) {
-    return ((size + FREADZONE_SIZE + ADDR_ALIGMENT + alignment - 1) & ~(alignment - 1));
+/* casting the size to the nearest multiple of alignment from above */
+size_t align_up_size(size_t size, size_t alignment)
+{
+  return ((size + FREADZONE_SIZE + ADDR_ALIGMENT + alignment - 1) &
+  ~(alignment - 1));
 }
 
+#endif
 
 static void *mmap_probe(size_t size)
 {
-    /* Hint for next allocation. Doesn't need to be thread-safe. */
-    static uintptr_t hint_addr = 0;
-    static uintptr_t hint_prng = 0;
-    int olderr = errno;
-    int retry;
-
-    /* размер памяти для выделения = (size + FREADZONE_SIZE + ADDR_ALIGMENT) приводим к ближайшему кратному SIZE_ALIGMENT сверху */
-    size_t new_size = align_up_size(size, SIZE_ALIGMENT);
-
-    for (retry = 0; retry < LJ_ALLOC_MMAP_PROBE_MAX; retry++)
-    {
-        /* пытаемся выделить new_size памяти*/
-        void *p = mmap((void *)hint_addr, new_size, MMAP_PROT, MMAP_FLAGS_PROBE, -1, 0);
-        uintptr_t addr = (uintptr_t)p;
-
-        /* проверка, что полученный адрес лежит в диапазоне [LJ_ALLOC_MMAP_PROBE_LOWER, 2^LJ_ALLOC_MBITS - 1]*/
-        if ((addr >> LJ_ALLOC_MBITS) == 0 && addr >= LJ_ALLOC_MMAP_PROBE_LOWER &&
-            ((addr + new_size) >> LJ_ALLOC_MBITS) == 0)
-        {
-            /* We got a suitable address. Bump the hint address. */
-            hint_addr = addr + size;
-            errno = olderr;
-
-            /* Необходимо выравнить указатель к ближайшему кратному ADDR_ALIGMENT сверху */
-
-            void *aligned_ptr = align_up(p, ADDR_ALIGMENT);
-
-            /* чистый размер (запрашиваемая память + размер READZONE) */
-            new_size = new_size - ADDR_ALIGMENT;
-
-            /* сначала отравляем всю выделенную память (rz включены) */
-            ASAN_POISON_MEMORY_REGION(p, new_size);
-
-            p = aligned_ptr + READZONE_SIZE;
-
-            /* разотравляем возвращаемую память */
-            ASAN_UNPOISON_MEMORY_REGION(p, size);
-
-            return p;
-        }
-        if (p != MFAIL)
-        {
-            munmap(p, size);
-        }
-        else if (errno == ENOMEM)
-        {
-            return MFAIL;
-        }
-        if (hint_addr)
-        {
-            /* First, try linear probing. */
-            if (retry < LJ_ALLOC_MMAP_PROBE_LINEAR)
-            {
-                hint_addr += 0x1000000;
-                if (((hint_addr + size) >> LJ_ALLOC_MBITS) != 0)
-                    hint_addr = 0;
-                continue;
-            }
-            else if (retry == LJ_ALLOC_MMAP_PROBE_LINEAR)
-            {
-                /* Next, try a no-hint probe to get back an ASLR address. */
-                hint_addr = 0;
-                continue;
-            }
-        }
-        /* Finally, try pseudo-random probing. */
-        if (LJ_UNLIKELY(hint_prng == 0))
-        {
-            hint_prng = mmap_probe_seed();
-        }
-        /* The unsuitable address we got has some ASLR PRNG bits. */
-        hint_addr ^= addr & ~((uintptr_t)(LJ_PAGESIZE - 1));
-        do
-        { /* The PRNG itself is very weak, but see above. */
-            hint_prng = hint_prng * 1103515245 + 12345;
-            hint_addr ^= hint_prng * (uintptr_t)LJ_PAGESIZE;
-            hint_addr &= (((uintptr_t)1 << LJ_ALLOC_MBITS) - 1);
-        } while (hint_addr < LJ_ALLOC_MMAP_PROBE_LOWER);
+  /* Hint for next allocation. Doesn't need to be thread-safe. */
+  static uintptr_t hint_addr = 0;
+  static uintptr_t hint_prng = 0;
+  int olderr = errno;
+  int retry;
+#if LUAJIT_USE_ASAN
+  size_t osz = size;
+  size = align_up_size(size, SIZE_ALIGMENT);
+#endif
+  for (retry = 0; retry < LJ_ALLOC_MMAP_PROBE_MAX; retry++) {
+    void *p = mmap((void *)hint_addr, size, MMAP_PROT, MMAP_FLAGS_PROBE, -1, 0);
+    uintptr_t addr = (uintptr_t)p;
+    if ((addr >> LJ_ALLOC_MBITS) == 0 && addr >= LJ_ALLOC_MMAP_PROBE_LOWER &&
+	((addr + size) >> LJ_ALLOC_MBITS) == 0) {
+      /* We got a suitable address. Bump the hint address. */
+      hint_addr = addr + size;
+      errno = olderr;
+#if LUAJIT_USE_ASAN
+      void *aligned_ptr = align_up(p, ADDR_ALIGMENT);
+      size = size - ADDR_ALIGMENT;
+      ASAN_POISON_MEMORY_REGION(p, size);
+      p = aligned_ptr + READZONE_SIZE;
+      ASAN_UNPOISON_MEMORY_REGION(p, osz);
+#endif
+      return p;
     }
-    errno = olderr;
-    return MFAIL;
+    if (p != MFAIL) {
+      munmap(p, size);
+    } else if (errno == ENOMEM) {
+      return MFAIL;
+    }
+    if (hint_addr) {
+      /* First, try linear probing. */
+      if (retry < LJ_ALLOC_MMAP_PROBE_LINEAR) {
+	hint_addr += 0x1000000;
+	if (((hint_addr + size) >> LJ_ALLOC_MBITS) != 0)
+	  hint_addr = 0;
+	continue;
+      } else if (retry == LJ_ALLOC_MMAP_PROBE_LINEAR) {
+	/* Next, try a no-hint probe to get back an ASLR address. */
+	hint_addr = 0;
+	continue;
+      }
+    }
+    /* Finally, try pseudo-random probing. */
+    if (LJ_UNLIKELY(hint_prng == 0)) {
+      hint_prng = mmap_probe_seed();
+    }
+    /* The unsuitable address we got has some ASLR PRNG bits. */
+    hint_addr ^= addr & ~((uintptr_t)(LJ_PAGESIZE-1));
+    do {  /* The PRNG itself is very weak, but see above. */
+      hint_prng = hint_prng * 1103515245 + 12345;
+      hint_addr ^= hint_prng * (uintptr_t)LJ_PAGESIZE;
+      hint_addr &= (((uintptr_t)1 << LJ_ALLOC_MBITS)-1);
+    } while (hint_addr < LJ_ALLOC_MMAP_PROBE_LOWER);
+  }
+  errno = olderr;
+  return MFAIL;
 }
 
 #endif
@@ -371,49 +362,34 @@ static void *mmap_map32(size_t size)
 #endif
   {
     int olderr = errno;
-
-
-    size_t new_size = align_up_size(size, SIZE_ALIGMENT);
-    void *ptr = mmap((void *)LJ_ALLOC_MMAP32_START, new_size, MMAP_PROT, MAP_32BIT|MMAP_FLAGS, -1, 0);
+#if LUAJIT_USE_ASAN
+    size_t osz = size;
+    size = align_up_size(size, SIZE_ALIGMENT);
+#endif
+    void *ptr = mmap((void *)LJ_ALLOC_MMAP32_START, size, MMAP_PROT, MAP_32BIT|MMAP_FLAGS, -1, 0);
     errno = olderr;
     /* This only allows 1GB on Linux. So fallback to probing to get 2GB. */
 #if LJ_ALLOC_MMAP_PROBE
     if (ptr == MFAIL) {
       fallback = 1;
+#if LUAJIT_USE_ASAN
+      return mmap_probe(osz);
+#else
       return mmap_probe(size);
+#endif
     }
 #endif
 
+#if LUAJIT_USE_ASAN
     void *aligned_ptr = align_up(ptr, ADDR_ALIGMENT);
-    new_size = new_size - ADDR_ALIGMENT;
-    ASAN_POISON_MEMORY_REGION(ptr, new_size);
+    size = size - ADDR_ALIGMENT;
+    ASAN_POISON_MEMORY_REGION(ptr, size);
     ptr = aligned_ptr + READZONE_SIZE;
-    ASAN_UNPOISON_MEMORY_REGION(ptr, size);
+    ASAN_UNPOISON_MEMORY_REGION(ptr, osz);
+#endif
     return ptr;
   }
 }
-
-// static void *mmap_map32(size_t size)
-// {
-// #if LJ_ALLOC_MMAP_PROBE
-//   static int fallback = 0;
-//   if (fallback)
-//     return mmap_probe(size);
-// #endif
-//   {
-//     int olderr = errno;
-//     void *ptr = mmap((void *)LJ_ALLOC_MMAP32_START, size, MMAP_PROT, MAP_32BIT|MMAP_FLAGS, -1, 0);
-//     errno = olderr;
-//     /* This only allows 1GB on Linux. So fallback to probing to get 2GB. */
-// #if LJ_ALLOC_MMAP_PROBE
-//     if (ptr == MFAIL) {
-//       fallback = 1;
-//       return mmap_probe(size);
-//     }
-// #endif
-//     return ptr;
-//   }
-// }
 
 #endif
 
@@ -445,22 +421,17 @@ static void init_mmap(void)
 
 #endif
 
-#define FREE_BLOCK_TYPE uint64_t
-#define FREE_BLOCK_SIZE sizeof(FREE_BLOCK_TYPE)
-
 static int CALL_MUNMAP(void *ptr, size_t size)
 {
   int olderr = errno;
 
-  /* Проверка доступности памяти */
+#if LUAJIT_USE_ASAN
   FREE_BLOCK_TYPE *tmp = (FREE_BLOCK_TYPE *)ptr;
-  for (int i=0; i < size / FREE_BLOCK_SIZE; ++i)
-  {
+  for (int i=0; i < size / FREE_BLOCK_SIZE; ++i) {
     tmp[i] = tmp[i];
   }
   uint8_t *b = (uint8_t *)(ptr) + (size - size % FREE_BLOCK_SIZE);
-  for (int i=0; i < size % FREE_BLOCK_SIZE; ++i)
-  {
+  for (int i=0; i < size % FREE_BLOCK_SIZE; ++i) {
     b[i] = b[i];
   }
 
@@ -468,6 +439,9 @@ static int CALL_MUNMAP(void *ptr, size_t size)
   if (ret == 0) {
     ASAN_POISON_MEMORY_REGION(ptr, size);
   }
+#else
+  int ret = munmap(ptr, size);
+#endif
   
   errno = olderr;
   return ret;
@@ -478,19 +452,23 @@ static int CALL_MUNMAP(void *ptr, size_t size)
 static void *CALL_MREMAP_(void *ptr, size_t osz, size_t nsz, int flags)
 {
   int olderr = errno;
+#if LUAJIT_USE_ASAN
   void *new_ptr = mmap_probe(nsz);
   if (new_ptr != MFAIL) {
     int res = *((int *)memcpy(new_ptr, ptr, osz));
     if (res != 0) {
       CALL_MUNMAP(ptr, osz);
-      ASAN_POISON_MEMORY_REGION(ptr, osz);
       ptr = (void *)new_ptr;
     } else {
+      ASAN_UNPOISON_MEMORY_REGION(new_ptr - READZONE_SIZE, osz + FREADZONE_SIZE);
       ptr = mremap(ptr, osz, nsz, flags);
     }
   } else {
     ptr = mremap(ptr, osz, nsz, flags);
   }
+#else
+  ptr = mremap(ptr, osz, nsz, flags);
+#endif
   errno = olderr;
   return ptr;
 }

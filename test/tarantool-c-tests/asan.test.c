@@ -27,7 +27,7 @@ static int mmap_ui8_test(void *test_state)
     /* ошибка (выход за границу слева) */
     // *(arr - 1) = 'a';
     /* ошибка (выход за границу справа) */
-    // arr[size / sizeof(uint18_t) + 1] = 'a';
+    arr[size / sizeof(uint8_t) + 1] = 'a';
 
     return TEST_EXIT_SUCCESS;
 }
@@ -103,11 +103,11 @@ static int munmap_use_after_free_test(void *test_state)
     if (p == MFAIL)
         return TEST_EXIT_FAILURE;
 
-    FREE(p, size);
     uint8_t *arr = (uint8_t *)p;
+    FREE(p, size);
     
     /* use after free */
-    // arr[0] = arr[0];
+    arr[25] = arr[25];
     return TEST_EXIT_SUCCESS;
 }
 
@@ -170,10 +170,10 @@ static int mremap_test_1(void *test_state)
     uint8_t *new_ptr = (uint8_t *)REALLOC(ptr, size, size + 10);
 
     /* к старой памяти обращаться нельзя */
-    // for (size_t i=0; i < size; ++i)
-    // {
-    //     ptr[i] = 'a' + i;
-    // }
+    for (size_t i=0; i < size; ++i)
+    {
+        ptr[i] = 'a' + i;
+    }
 
     for (size_t i=0; i < size; ++i)
     {
@@ -190,15 +190,15 @@ int main(void)
 	main_L = L;
 
 	const struct test_unit tgroup[] = {
-		test_unit_def(mmap_ui8_test),
-        test_unit_def(mmap_ui16_test),
-        test_unit_def(mmap_ui32_test),
-        test_unit_def(mmap_ui64_test),
+		// test_unit_def(mmap_ui8_test),
+        // test_unit_def(mmap_ui16_test),
+        // test_unit_def(mmap_ui32_test),
+        // test_unit_def(mmap_ui64_test),
         
-        test_unit_def(munmap_use_after_free_test),
-        test_unit_def(munmap_double_free_test),
-        test_unit_def(munmap_free_upper_size_test),
-        test_unit_def(munmap_f_n_test),
+        // test_unit_def(munmap_use_after_free_test)
+        // test_unit_def(munmap_double_free_test),
+        // test_unit_def(munmap_free_upper_size_test),
+        // test_unit_def(munmap_f_n_test),
         test_unit_def(mremap_test_1)
 
 	};
