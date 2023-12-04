@@ -435,7 +435,7 @@ static int CALL_MUNMAP(void *ptr, size_t size)
     b[i] = b[i];
   }
 
-  int ret = munmap(ptr, size);
+  int ret = munmap(ptr - READZONE_SIZE, size + FREADZONE_SIZE);
   if (ret == 0) {
     ASAN_POISON_MEMORY_REGION(ptr, size);
   }
@@ -453,6 +453,11 @@ static void *CALL_MREMAP_(void *ptr, size_t osz, size_t nsz, int flags)
 {
   int olderr = errno;
 #if LUAJIT_USE_ASAN
+  if (nsz < osz) {
+    ptr = mremap(ptr, osz, nsz, flags);
+    errno = olderr;
+    return ptr;
+  }
   void *new_ptr = mmap_probe(nsz);
   if (new_ptr != MFAIL) {
     int res = *((int *)memcpy(new_ptr, ptr, osz));
