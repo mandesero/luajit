@@ -1395,7 +1395,11 @@ static LJ_NOINLINE void *lj_alloc_malloc(void *msp, size_t nsize)
   if (nsize <= MAX_SMALL_REQUEST) {
     bindex_t idx;
     binmap_t smallbits;
+#if LUAJIT_USE_ASAN
+    nb = align_up_size(nsize, MALLOC_ALIGNMENT);
+#else
     nb = (nsize < MIN_REQUEST)? MIN_CHUNK_SIZE : pad_request(nsize);
+#endif
     idx = small_index(nb);
     smallbits = ms->smallmap >> idx;
 
@@ -1503,9 +1507,11 @@ static LJ_NOINLINE void *lj_alloc_malloc(void *msp, size_t nsize)
 static LJ_NOINLINE void *lj_alloc_free(void *msp, void *ptr)
 {
 #if LUAJIT_USE_ASAN
+    if (ptr == 0)
+      return NULL;
     mchunkptr p = mem2chunk(ptr);
     size_t psize = chunksize(p);
-    ASAN_POISON_MEMORY_REGION(ptr, psize);
+    ASAN_POISON_MEMORY_REGION(ptr, psize - FREADZONE_SIZE);
     return NULL;
 #else
     if (ptr != 0)
@@ -1604,8 +1610,20 @@ static LJ_NOINLINE void *lj_alloc_free(void *msp, void *ptr)
 static LJ_NOINLINE void *lj_alloc_realloc(void *msp, void *ptr, size_t nsize)
 {
 #if LUAJIT_USE_ASAN
-  
-#endif
+  if (nsize >= MAX_REQUEST)
+    return NULL;
+  mstate m = (mstate)msp;
+  mchunkptr oldp = mem2chunk(ptr);
+  size_t oldsize = chunksize(oldp);
+  void *newmem = lj_alloc_malloc(m, nsize);
+  if (newmem != 0) {
+    size_t oc = oldsize - overhead_for(oldp);
+    memcpy(newmem, ptr, oc < nsize ? oc : nsize);
+    lj_alloc_free(m, ptr);
+  }
+  return newmem;
+#else
+
   if (nsize >= MAX_REQUEST) {
     return NULL;
   } else {
@@ -1652,6 +1670,7 @@ static LJ_NOINLINE void *lj_alloc_realloc(void *msp, void *ptr, size_t nsize)
       return newmem;
     }
   }
+#endif
 }
 
 void *lj_alloc_f(void *msp, void *ptr, size_t osize, size_t nsize)

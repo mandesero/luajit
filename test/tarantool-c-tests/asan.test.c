@@ -184,6 +184,16 @@ static int mremap_test_1(void *test_state)
     return TEST_EXIT_SUCCESS;
 }
 
+static int malloc_test(void *test_state)
+{
+    size_t size = 20;
+    void *p = malloc(size);
+    uint8_t *ptr = (uint8_t *)p;
+    ptr[size + 1] = 1; 
+
+    return TEST_EXIT_SUCCESS;
+}
+
 int main(void)
 {
 	lua_State *L = utils_lua_init();
@@ -199,7 +209,7 @@ int main(void)
         // test_unit_def(munmap_double_free_test),
         // test_unit_def(munmap_free_upper_size_test),
         // test_unit_def(munmap_f_n_test),
-        test_unit_def(mremap_test_1)
+        test_unit_def(malloc_test)
 
 	};
 
