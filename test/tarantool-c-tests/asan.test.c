@@ -183,13 +183,16 @@ static int mremap_test_1(void *test_state)
 
     return TEST_EXIT_SUCCESS;
 }
+
+#include "lj_gc.h"
 int main(void)
 {
-    // lj_mem_new
-    // exit(1);
-    return 0;
-	// lua_State *L = utils_lua_init();
-	// main_L = L;
+	lua_State *L = utils_lua_init();
+	main_L = L;
+    size_t size = 39;
+    void* p = lj_mem_new(L, size);
+    uint8_t *ptr = (uint8_t *)p;
+    uint8_t a = ptr[size + 1];
 
 	// const struct test_unit tgroup[] = {
 	// 	// test_unit_def(mmap_ui8_test),
@@ -206,6 +209,6 @@ int main(void)
 	// };
 
 	// const int test_result = test_run_group(tgroup, L);
-    // utils_lua_close(L);
-	// return test_result;
+    utils_lua_close(L);
+	return 0;
 }

@@ -1395,7 +1395,7 @@ static LJ_NOINLINE void *lj_alloc_malloc(void *msp, size_t nsize)
 {
 #if LUAJIT_USE_ASAN
   size_t osz = nsize;
-  nsize = align_up_size(size, SIZE_ALIGMENT) - ADDR_ALIGMENT;
+  nsize = align_up_size(osz, SIZE_ALIGMENT) - ADDR_ALIGMENT;
 #endif
   mstate ms = (mstate)msp;
   void *mem;
@@ -1417,7 +1417,7 @@ static LJ_NOINLINE void *lj_alloc_malloc(void *msp, size_t nsize)
       mem = chunk2mem(p);
 
 #if LUAJIT_USE_ASAN
-      ASAN_POISON_MEMORY_REGION(mem - READZONE_SIZE, nsize);
+      ASAN_POISON_MEMORY_REGION(mem - READZONE_SIZE, nsize - TWO_SIZE_T_SIZES);
       ASAN_UNPOISON_MEMORY_REGION(mem, osz);
 #endif
       
@@ -1444,7 +1444,7 @@ static LJ_NOINLINE void *lj_alloc_malloc(void *msp, size_t nsize)
 	mem = chunk2mem(p);
 
 #if LUAJIT_USE_ASAN
-  ASAN_POISON_MEMORY_REGION(mem - READZONE_SIZE, nsize);
+  ASAN_POISON_MEMORY_REGION(mem - READZONE_SIZE, nsize - TWO_SIZE_T_SIZES);
   ASAN_UNPOISON_MEMORY_REGION(mem, osz);
 #endif
 
@@ -1452,7 +1452,7 @@ static LJ_NOINLINE void *lj_alloc_malloc(void *msp, size_t nsize)
       } else if (ms->treemap != 0 && (mem = tmalloc_small(ms, nb)) != 0) {
 
 #if LUAJIT_USE_ASAN
-  ASAN_POISON_MEMORY_REGION(mem - READZONE_SIZE, nsize);
+  ASAN_POISON_MEMORY_REGION(mem - READZONE_SIZE, nsize - TWO_SIZE_T_SIZES);
   ASAN_UNPOISON_MEMORY_REGION(mem, osz);
 #endif
 
@@ -1466,7 +1466,7 @@ static LJ_NOINLINE void *lj_alloc_malloc(void *msp, size_t nsize)
     if (ms->treemap != 0 && (mem = tmalloc_large(ms, nb)) != 0) {
 
 #if LUAJIT_USE_ASAN
-      ASAN_POISON_MEMORY_REGION(mem - READZONE_SIZE, nsize);
+      ASAN_POISON_MEMORY_REGION(mem - READZONE_SIZE, nsize - TWO_SIZE_T_SIZES);
       ASAN_UNPOISON_MEMORY_REGION(mem, osz);
 #endif
 
@@ -1491,7 +1491,7 @@ static LJ_NOINLINE void *lj_alloc_malloc(void *msp, size_t nsize)
     mem = chunk2mem(p);
 
 #if LUAJIT_USE_ASAN
-    ASAN_POISON_MEMORY_REGION(mem - READZONE_SIZE, nsize);
+    ASAN_POISON_MEMORY_REGION(mem - READZONE_SIZE, nsize - TWO_SIZE_T_SIZES);
     ASAN_UNPOISON_MEMORY_REGION(mem, osz);
 #endif
 
@@ -1505,7 +1505,7 @@ static LJ_NOINLINE void *lj_alloc_malloc(void *msp, size_t nsize)
     mem = chunk2mem(p);
 
 #if LUAJIT_USE_ASAN
-    ASAN_POISON_MEMORY_REGION(mem - READZONE_SIZE, nsize);
+    ASAN_POISON_MEMORY_REGION(mem - READZONE_SIZE, nsize - TWO_SIZE_T_SIZES);
     ASAN_UNPOISON_MEMORY_REGION(mem, osz);
 #endif
 
@@ -1513,7 +1513,7 @@ static LJ_NOINLINE void *lj_alloc_malloc(void *msp, size_t nsize)
   }
   mem = alloc_sys(ms, nb);
 #if LUAJIT_USE_ASAN
-  ASAN_POISON_MEMORY_REGION(mem - READZONE_SIZE, nsize);
+  ASAN_POISON_MEMORY_REGION(mem - READZONE_SIZE, nsize - TWO_SIZE_T_SIZES);
   ASAN_UNPOISON_MEMORY_REGION(mem, osz);
 #endif
   return mem;
@@ -1522,16 +1522,14 @@ static LJ_NOINLINE void *lj_alloc_malloc(void *msp, size_t nsize)
 
 static LJ_NOINLINE void *lj_alloc_free(void *msp, void *ptr)
 {
-// #if LUAJIT_USE_ASAN
-    // if (ptr == 0)
-    //   return NULL;
-    
-    // mchunkptr p = mem2chunk(ptr);
-    // mstate fm = (mstate)msp;
-    // size_t psize = chunksize(p);
-    // mchunkptr next = chunk_plus_offset(p, psize);
-
-// #else
+#if LUAJIT_USE_ASAN
+    if (ptr != 0) {    
+      mchunkptr p = mem2chunk(ptr);
+      mstate fm = (mstate)msp;
+      size_t psize = chunksize(p);
+      ASAN_POISON_MEMORY_REGION(ptr - READZONE_SIZE, psize);
+    }
+#else
     if (ptr != 0)
     {
         mchunkptr p = mem2chunk(ptr);
@@ -1622,7 +1620,7 @@ static LJ_NOINLINE void *lj_alloc_free(void *msp, void *ptr)
     }
 
     return NULL;
-// #endif
+#endif
 }
 
 static LJ_NOINLINE void *lj_alloc_realloc(void *msp, void *ptr, size_t nsize)
