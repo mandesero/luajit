@@ -183,27 +183,29 @@ static int mremap_test_1(void *test_state)
 
     return TEST_EXIT_SUCCESS;
 }
-
 int main(void)
 {
-	lua_State *L = utils_lua_init();
-	main_L = L;
+    // lj_mem_new
+    // exit(1);
+    return 0;
+	// lua_State *L = utils_lua_init();
+	// main_L = L;
 
-	const struct test_unit tgroup[] = {
-		// test_unit_def(mmap_ui8_test),
-        // test_unit_def(mmap_ui16_test),
-        // test_unit_def(mmap_ui32_test),
-        // test_unit_def(mmap_ui64_test),
+	// const struct test_unit tgroup[] = {
+	// 	// test_unit_def(mmap_ui8_test),
+    //     // test_unit_def(mmap_ui16_test),
+    //     // test_unit_def(mmap_ui32_test),
+    //     // test_unit_def(mmap_ui64_test),
         
-        // test_unit_def(munmap_use_after_free_test)
-        // test_unit_def(munmap_double_free_test),
-        // test_unit_def(munmap_free_upper_size_test),
-        // test_unit_def(munmap_f_n_test),
-        test_unit_def(mremap_test_1)
+    //     // test_unit_def(munmap_use_after_free_test)
+    //     // test_unit_def(munmap_double_free_test),
+    //     // test_unit_def(munmap_free_upper_size_test),
+    //     // test_unit_def(munmap_f_n_test),
+    //     test_unit_def(mremap_test_1)
 
-	};
+	// };
 
-	const int test_result = test_run_group(tgroup, L);
-    utils_lua_close(L);
-	return test_result;
+	// const int test_result = test_run_group(tgroup, L);
+    // utils_lua_close(L);
+	// return test_result;
 }

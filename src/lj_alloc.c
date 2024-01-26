@@ -534,9 +534,23 @@ typedef unsigned int flag_t;           /* The type of various bit flag sets */
 #define MIN_CHUNK_SIZE\
   ((MCHUNK_SIZE + CHUNK_ALIGN_MASK) & ~CHUNK_ALIGN_MASK)
 
+/// =======================================================================
+#if LUAJIT_USE_ASAN
+
+/* conversion from malloc headers to user pointers, and back */
+#define chunk2mem(p)		((void *)((char *)(p) + TWO_SIZE_T_SIZES + READZONE_SIZE))
+#define mem2chunk(mem)		((mchunkptr)((char *)(mem) - TWO_SIZE_T_SIZES - READZONE_SIZE))
+
+#else
+
 /* conversion from malloc headers to user pointers, and back */
 #define chunk2mem(p)		((void *)((char *)(p) + TWO_SIZE_T_SIZES))
 #define mem2chunk(mem)		((mchunkptr)((char *)(mem) - TWO_SIZE_T_SIZES))
+
+#endif
+/// =======================================================================
+
+
 /* chunk associated with aligned address A */
 #define align_as_chunk(A)	(mchunkptr)((A) + align_offset(chunk2mem(A)))
 
@@ -1373,8 +1387,16 @@ void lj_alloc_destroy(void *msp)
   }
 }
 
+// #if LUAJIT_USE_ASAN
+// #else
+// #endif
+
 static LJ_NOINLINE void *lj_alloc_malloc(void *msp, size_t nsize)
 {
+#if LUAJIT_USE_ASAN
+  size_t osz = nsize;
+  nsize = align_up_size(size, SIZE_ALIGMENT) - ADDR_ALIGMENT;
+#endif
   mstate ms = (mstate)msp;
   void *mem;
   size_t nb;
@@ -1393,6 +1415,12 @@ static LJ_NOINLINE void *lj_alloc_malloc(void *msp, size_t nsize)
       unlink_first_small_chunk(ms, b, p, idx);
       set_inuse_and_pinuse(ms, p, small_index2size(idx));
       mem = chunk2mem(p);
+
+#if LUAJIT_USE_ASAN
+      ASAN_POISON_MEMORY_REGION(mem - READZONE_SIZE, nsize);
+      ASAN_UNPOISON_MEMORY_REGION(mem, osz);
+#endif
+      
       return mem;
     } else if (nb > ms->dvsize) {
       if (smallbits != 0) { /* Use chunk in next nonempty smallbin */
@@ -1414,8 +1442,20 @@ static LJ_NOINLINE void *lj_alloc_malloc(void *msp, size_t nsize)
 	  replace_dv(ms, r, rsize);
 	}
 	mem = chunk2mem(p);
+
+#if LUAJIT_USE_ASAN
+  ASAN_POISON_MEMORY_REGION(mem - READZONE_SIZE, nsize);
+  ASAN_UNPOISON_MEMORY_REGION(mem, osz);
+#endif
+
 	return mem;
       } else if (ms->treemap != 0 && (mem = tmalloc_small(ms, nb)) != 0) {
+
+#if LUAJIT_USE_ASAN
+  ASAN_POISON_MEMORY_REGION(mem - READZONE_SIZE, nsize);
+  ASAN_UNPOISON_MEMORY_REGION(mem, osz);
+#endif
+
 	return mem;
       }
     }
@@ -1424,6 +1464,12 @@ static LJ_NOINLINE void *lj_alloc_malloc(void *msp, size_t nsize)
   } else {
     nb = pad_request(nsize);
     if (ms->treemap != 0 && (mem = tmalloc_large(ms, nb)) != 0) {
+
+#if LUAJIT_USE_ASAN
+      ASAN_POISON_MEMORY_REGION(mem - READZONE_SIZE, nsize);
+      ASAN_UNPOISON_MEMORY_REGION(mem, osz);
+#endif
+
       return mem;
     }
   }
@@ -1443,6 +1489,12 @@ static LJ_NOINLINE void *lj_alloc_malloc(void *msp, size_t nsize)
       set_inuse_and_pinuse(ms, p, dvs);
     }
     mem = chunk2mem(p);
+
+#if LUAJIT_USE_ASAN
+    ASAN_POISON_MEMORY_REGION(mem - READZONE_SIZE, nsize);
+    ASAN_UNPOISON_MEMORY_REGION(mem, osz);
+#endif
+
     return mem;
   } else if (nb < ms->topsize) { /* Split top */
     size_t rsize = ms->topsize -= nb;
@@ -1451,13 +1503,35 @@ static LJ_NOINLINE void *lj_alloc_malloc(void *msp, size_t nsize)
     r->head = rsize | PINUSE_BIT;
     set_size_and_pinuse_of_inuse_chunk(ms, p, nb);
     mem = chunk2mem(p);
+
+#if LUAJIT_USE_ASAN
+    ASAN_POISON_MEMORY_REGION(mem - READZONE_SIZE, nsize);
+    ASAN_UNPOISON_MEMORY_REGION(mem, osz);
+#endif
+
     return mem;
   }
-  return alloc_sys(ms, nb);
+  mem = alloc_sys(ms, nb);
+#if LUAJIT_USE_ASAN
+  ASAN_POISON_MEMORY_REGION(mem - READZONE_SIZE, nsize);
+  ASAN_UNPOISON_MEMORY_REGION(mem, osz);
+#endif
+  return mem;
+
 }
 
 static LJ_NOINLINE void *lj_alloc_free(void *msp, void *ptr)
 {
+// #if LUAJIT_USE_ASAN
+    // if (ptr == 0)
+    //   return NULL;
+    
+    // mchunkptr p = mem2chunk(ptr);
+    // mstate fm = (mstate)msp;
+    // size_t psize = chunksize(p);
+    // mchunkptr next = chunk_plus_offset(p, psize);
+
+// #else
     if (ptr != 0)
     {
         mchunkptr p = mem2chunk(ptr);
@@ -1548,6 +1622,7 @@ static LJ_NOINLINE void *lj_alloc_free(void *msp, void *ptr)
     }
 
     return NULL;
+// #endif
 }
 
 static LJ_NOINLINE void *lj_alloc_realloc(void *msp, void *ptr, size_t nsize)
