@@ -189,7 +189,7 @@ int main(void)
 {
 	lua_State *L = utils_lua_init();
 	main_L = L;
-    size_t size = 39;
+    size_t size = 30;
     void* p = lj_mem_new(L, size);
     uint8_t *ptr = (uint8_t *)p;
     uint8_t a = ptr[size + 1];
