@@ -1425,6 +1425,8 @@ static LJ_NOINLINE void *lj_alloc_malloc(void *msp, size_t nsize)
       mem = chunk2mem(p);
 
 #if LUAJIT_USE_ASAN
+      *(size_t*)(mem - READZONE_SIZE) = osz;
+      *(size_t*)(mem - READZONE_SIZE + SIZE_T_SIZE) = poison_size;
       ASAN_POISON_MEMORY_REGION(mem - READZONE_SIZE, poison_size);
       ASAN_UNPOISON_MEMORY_REGION(mem, osz);
       fprintf(stderr, "chunk_size = %ld\n", chunksize(p));
@@ -1452,6 +1454,8 @@ static LJ_NOINLINE void *lj_alloc_malloc(void *msp, size_t nsize)
 	mem = chunk2mem(p);
 
 #if LUAJIT_USE_ASAN
+  *(size_t*)(mem - READZONE_SIZE) = osz;
+  *(size_t*)(mem - READZONE_SIZE + SIZE_T_SIZE) = poison_size;
   ASAN_POISON_MEMORY_REGION(mem - READZONE_SIZE, poison_size);
   ASAN_UNPOISON_MEMORY_REGION(mem, osz);
   fprintf(stderr, "chunk_size = %ld\n", chunksize(p));
@@ -1461,6 +1465,8 @@ static LJ_NOINLINE void *lj_alloc_malloc(void *msp, size_t nsize)
       } else if (ms->treemap != 0 && (mem = tmalloc_small(ms, nb)) != 0) {
 
 #if LUAJIT_USE_ASAN
+  *(size_t*)(mem - READZONE_SIZE) = osz;
+  *(size_t*)(mem - READZONE_SIZE + SIZE_T_SIZE) = poison_size;
   ASAN_POISON_MEMORY_REGION(mem - READZONE_SIZE, poison_size);
   ASAN_UNPOISON_MEMORY_REGION(mem, osz);
   mchunkptr p = mem2chunk(mem);
@@ -1477,6 +1483,8 @@ static LJ_NOINLINE void *lj_alloc_malloc(void *msp, size_t nsize)
     if (ms->treemap != 0 && (mem = tmalloc_large(ms, nb)) != 0) {
 
 #if LUAJIT_USE_ASAN
+      *(size_t*)(mem - READZONE_SIZE) = osz;
+      *(size_t*)(mem - READZONE_SIZE + SIZE_T_SIZE) = poison_size;
       ASAN_POISON_MEMORY_REGION(mem - READZONE_SIZE, poison_size);
       ASAN_UNPOISON_MEMORY_REGION(mem, osz);
       mchunkptr p = mem2chunk(mem);
@@ -1504,6 +1512,8 @@ static LJ_NOINLINE void *lj_alloc_malloc(void *msp, size_t nsize)
     mem = chunk2mem(p);
 
 #if LUAJIT_USE_ASAN
+    *(size_t*)(mem - READZONE_SIZE) = osz;
+    *(size_t*)(mem - READZONE_SIZE + SIZE_T_SIZE) = poison_size;
     ASAN_POISON_MEMORY_REGION(mem - READZONE_SIZE, poison_size);
     ASAN_UNPOISON_MEMORY_REGION(mem, osz);
     fprintf(stderr, "chunk_size = %ld\n", chunksize(p));
@@ -1519,6 +1529,8 @@ static LJ_NOINLINE void *lj_alloc_malloc(void *msp, size_t nsize)
     mem = chunk2mem(p);
 
 #if LUAJIT_USE_ASAN
+    *(size_t*)(mem - READZONE_SIZE) = osz;
+    *(size_t*)(mem - READZONE_SIZE + SIZE_T_SIZE) = poison_size;
     ASAN_POISON_MEMORY_REGION(mem - READZONE_SIZE, poison_size);
     ASAN_UNPOISON_MEMORY_REGION(mem, osz);
     fprintf(stderr, "chunk_size = %ld\n", chunksize(p));
@@ -1528,6 +1540,8 @@ static LJ_NOINLINE void *lj_alloc_malloc(void *msp, size_t nsize)
   }
   mem = alloc_sys(ms, nb);
 #if LUAJIT_USE_ASAN
+  *(size_t*)(mem - READZONE_SIZE) = osz;
+  *(size_t*)(mem - READZONE_SIZE + SIZE_T_SIZE) = poison_size;
   ASAN_POISON_MEMORY_REGION(mem - READZONE_SIZE, poison_size);
   ASAN_UNPOISON_MEMORY_REGION(mem, osz);
 #endif
@@ -1535,14 +1549,32 @@ static LJ_NOINLINE void *lj_alloc_malloc(void *msp, size_t nsize)
 
 }
 
+#if LUAJIT_USE_ASAN
+void check_mem_for_free(void *ptr, size_t size) {
+  FREE_BLOCK_TYPE *tmp = (FREE_BLOCK_TYPE *)ptr;
+  for (int i=0; i < size / FREE_BLOCK_SIZE; ++i) {
+    tmp[i] = tmp[i];
+  }
+  uint8_t *b = (uint8_t *)(ptr) + (size - size % FREE_BLOCK_SIZE);
+  for (int i=0; i < size % FREE_BLOCK_SIZE; ++i) {
+    b[i] = b[i];
+  }
+}
+#endif
+
 static LJ_NOINLINE void *lj_alloc_free(void *msp, void *ptr)
 {
 #if LUAJIT_USE_ASAN
     if (ptr != 0) {    
       mchunkptr p = mem2chunk(ptr);
       mstate fm = (mstate)msp;
+      ASAN_UNPOISON_MEMORY_REGION(ptr - READZONE_SIZE, TWO_SIZE_T_SIZES);
+      size_t msize = *(size_t*)(ptr - READZONE_SIZE);
+      size_t poison_size = *(size_t*)(ptr - READZONE_SIZE + SIZE_T_SIZE);
+      fprintf(stderr, "chunk_mem_size = %ld\npoison_size = %ld\n", msize, poison_size);
       size_t psize = chunksize(p);
-      ASAN_POISON_MEMORY_REGION(ptr - READZONE_SIZE, psize);
+      check_mem_for_free(ptr, msize);
+      ASAN_POISON_MEMORY_REGION(ptr - READZONE_SIZE, poison_size);
     }
     return NULL;
 #else
@@ -1641,6 +1673,25 @@ static LJ_NOINLINE void *lj_alloc_free(void *msp, void *ptr)
 
 static LJ_NOINLINE void *lj_alloc_realloc(void *msp, void *ptr, size_t nsize)
 {
+#if LUAJIT_USE_ASAN
+  if (nsize >= MAX_REQUEST)
+    return NULL;
+
+  mstate m = (mstate)msp;
+
+  ASAN_UNPOISON_MEMORY_REGION(ptr - READZONE_SIZE, TWO_SIZE_T_SIZES);
+  size_t msize = *(size_t*)(ptr - READZONE_SIZE);
+  size_t poison_size = *(size_t*)(ptr - READZONE_SIZE + SIZE_T_SIZE);
+  ASAN_POISON_MEMORY_REGION(ptr - READZONE_SIZE, TWO_SIZE_T_SIZES);
+
+  void *newmem = lj_alloc_malloc(m, nsize);
+  if (newmem == 0)
+    return newmem;
+  memcpy(newmem, ptr, msize);
+  ASAN_POISON_MEMORY_REGION(ptr - READZONE_SIZE, poison_size);
+  return newmem;
+
+#else
   if (nsize >= MAX_REQUEST) {
     return NULL;
   } else {
@@ -1687,6 +1738,7 @@ static LJ_NOINLINE void *lj_alloc_realloc(void *msp, void *ptr, size_t nsize)
       return newmem;
     }
   }
+#endif
 }
 
 void *lj_alloc_f(void *msp, void *ptr, size_t osize, size_t nsize)

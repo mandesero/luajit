@@ -188,11 +188,24 @@ static int mremap_test_1(void *test_state)
 int main(void)
 {
 	lua_State *L = utils_lua_init();
+    global_State *g = G(L);
 	main_L = L;
     size_t size = 30;
     void* p = lj_mem_new(L, size);
     uint8_t *ptr = (uint8_t *)p;
-    uint8_t a = ptr[size + 1];
+    for (size_t i=0; i < size; ++i)
+    {
+        ptr[i] = 'a' + i;
+    }
+    void *newptr = lj_mem_realloc(L, p, size, size + 11);
+    for (size_t i=0; i < size + 12; ++i)
+    {
+        fprintf(stderr, "\n---%c\n", ((char *)ptr)[i]);
+    }
+    // lj_mem_free(g, p, 0);
+    // lj_mem_free(g, p, 0);
+
+
 
 	// const struct test_unit tgroup[] = {
 	// 	// test_unit_def(mmap_ui8_test),
