@@ -495,42 +495,71 @@ static int CALL_MUNMAP(void *ptr, size_t size)
 
 #if LJ_ALLOC_MREMAP
 /* Need to define _GNU_SOURCE to get the mremap prototype. */
+// static void *CALL_MREMAP_(void *ptr, size_t osz, size_t nsz, int flags)
+// {
+// #if LUAJIT_USE_ASAN
+//   int olderr = errno;
+//   check_mem_for_free(ptr, osz);
+
+//   void *old_ptr = ptr - READZONE_SIZE;
+//   size_t old_mem_size = osz;
+//   size_t old_poison_size = (size_t)align_up(old_mem_size, SIZE_ALIGMENT) + FREADZONE_SIZE;
+//   ASAN_UNPOISON_MEMORY_REGION(old_ptr, old_poison_size);
+
+//   osz = nsz;
+//   nsz = (size_t)align_up(osz, SIZE_ALIGMENT) + FREADZONE_SIZE;
+
+//   ptr = mremap(old_ptr, old_poison_size, nsz, flags);
+  
+//   if (ptr == MFAIL)
+//   {
+//     errno = olderr;
+//     return ptr;
+//   }
+
+//   ASAN_POISON_MEMORY_REGION(old_ptr, old_poison_size);
+
+//   ASAN_POISON_MEMORY_REGION(ptr, nsz);
+//   ptr += READZONE_SIZE;
+//   ASAN_UNPOISON_MEMORY_REGION(ptr, osz);
+
+//   errno = olderr;
+//   return ptr;
+// #else
+//   int olderr = errno;
+//   ptr = mremap(ptr, osz, nsz, flags);
+//   errno = olderr;
+//   return ptr;
+// #endif
+// }
+
+/* Need to define _GNU_SOURCE to get the mremap prototype. */
 static void *CALL_MREMAP_(void *ptr, size_t osz, size_t nsz, int flags)
 {
-#if LUAJIT_USE_ASAN
   int olderr = errno;
-  check_mem_for_free(ptr, osz);
-
-  void *old_ptr = ptr - READZONE_SIZE;
-  size_t old_mem_size = osz;
-  size_t old_poison_size = (size_t)align_up(old_mem_size, SIZE_ALIGMENT) + FREADZONE_SIZE;
-  ASAN_UNPOISON_MEMORY_REGION(old_ptr, old_poison_size);
-
-  osz = nsz;
-  nsz = (size_t)align_up(osz, SIZE_ALIGMENT) + FREADZONE_SIZE;
-
-  ptr = mremap(old_ptr, old_poison_size, nsz, flags);
-  
-  if (ptr == MFAIL)
+#if LUAJIT_USE_ASAN
+  if (nsz < osz)
   {
+    ptr = mremap(ptr, osz, nsz, flags);
     errno = olderr;
     return ptr;
   }
-
-  ASAN_POISON_MEMORY_REGION(old_ptr, old_poison_size);
-
-  ASAN_POISON_MEMORY_REGION(ptr, nsz);
-  ptr += READZONE_SIZE;
-  ASAN_UNPOISON_MEMORY_REGION(ptr, osz);
-  
-  errno = olderr;
-  return ptr;
+  void *new_ptr = mmap_probe(nsz);
+  if (new_ptr != MFAIL)
+  {
+    memcpy(new_ptr, ptr, osz);
+    CALL_MUNMAP(ptr, osz);
+    ptr = new_ptr;
+  }
+  else
+  {
+    ptr = mremap(ptr, osz, nsz, flags);
+  }
 #else
-  int olderr = errno;
   ptr = mremap(ptr, osz, nsz, flags);
+#endif
   errno = olderr;
   return ptr;
-#endif
 }
 
 #define CALL_MREMAP(addr, osz, nsz, mv) CALL_MREMAP_((addr), (osz), (nsz), (mv))
