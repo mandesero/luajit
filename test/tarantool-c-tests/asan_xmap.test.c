@@ -71,9 +71,10 @@ static int mremap_test(void *test_state)
 
     void *p = MALLOC(size);
     void *cp = MALLOC(size);
-
+    
     if (p == MFAIL)
         return TEST_EXIT_FAILURE;
+    
 
     uint8_t *ptr = (uint8_t *)p;
     uint8_t *cptr = (uint8_t *)cp;
@@ -81,13 +82,17 @@ static int mremap_test(void *test_state)
         ptr[i] = i;
         cptr[i] = i;
     }
-
+    
     void *newptr = REALLOC(ptr, size, new_size);
 
+    if (newptr == MFAIL)
+        return TEST_EXIT_FAILURE;
+
+    uint8_t *np = (uint8_t *)newptr;
     if (
         IS_POISONED_REGION(p - READZONE_SIZE, FREADZONE_SIZE + size + algn)
     ) {
-        int res = memcmp(cp, newptr, size);
+        int res = memcmp(cp, np, size);
         if (res != 0)
             return TEST_EXIT_FAILURE;
 
@@ -101,12 +106,13 @@ static int mremap_test(void *test_state)
     return TEST_EXIT_FAILURE;
 }
 
+
 #include "lj_gc.h"
 int main(void)
 {
 	lua_State *L = utils_lua_init();
-    global_State *g = G(L);
     main_LS = L;
+
     const struct test_unit tgroup[] = {
         test_unit_def(mmap_probe_test),
         test_unit_def(munmap_test),
@@ -116,5 +122,4 @@ int main(void)
     const int test_result = test_run_group(tgroup, L);
     utils_lua_close(L);
     return 0;
-	return 0;
 }
