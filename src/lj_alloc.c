@@ -494,44 +494,6 @@ static int CALL_MUNMAP(void *ptr, size_t size)
 #include <stdio.h>
 
 #if LJ_ALLOC_MREMAP
-/* Need to define _GNU_SOURCE to get the mremap prototype. */
-// static void *CALL_MREMAP_(void *ptr, size_t osz, size_t nsz, int flags)
-// {
-// #if LUAJIT_USE_ASAN
-//   int olderr = errno;
-//   check_mem_for_free(ptr, osz);
-
-//   void *old_ptr = ptr - READZONE_SIZE;
-//   size_t old_mem_size = osz;
-//   size_t old_poison_size = (size_t)align_up(old_mem_size, SIZE_ALIGMENT) + FREADZONE_SIZE;
-//   ASAN_UNPOISON_MEMORY_REGION(old_ptr, old_poison_size);
-
-//   osz = nsz;
-//   nsz = (size_t)align_up(osz, SIZE_ALIGMENT) + FREADZONE_SIZE;
-
-//   ptr = mremap(old_ptr, old_poison_size, nsz, flags);
-  
-//   if (ptr == MFAIL)
-//   {
-//     errno = olderr;
-//     return ptr;
-//   }
-
-//   ASAN_POISON_MEMORY_REGION(old_ptr, old_poison_size);
-
-//   ASAN_POISON_MEMORY_REGION(ptr, nsz);
-//   ptr += READZONE_SIZE;
-//   ASAN_UNPOISON_MEMORY_REGION(ptr, osz);
-
-//   errno = olderr;
-//   return ptr;
-// #else
-//   int olderr = errno;
-//   ptr = mremap(ptr, osz, nsz, flags);
-//   errno = olderr;
-//   return ptr;
-// #endif
-// }
 
 /* Need to define _GNU_SOURCE to get the mremap prototype. */
 static void *CALL_MREMAP_(void *ptr, size_t osz, size_t nsz, int flags)
@@ -586,6 +548,8 @@ static void *CALL_MREMAP_(void *ptr, size_t osz, size_t nsz, int flags)
 #ifndef CALL_MREMAP
 #define CALL_MREMAP(addr, osz, nsz, mv) ((void)osz, MFAIL)
 #endif
+
+#define MSEGMENT_SIZE sizeof(struct malloc_segment)
 
 /* -----------------------  Chunk representations ------------------------ */
 
@@ -784,11 +748,19 @@ typedef struct malloc_state *mstate;
 static msegmentptr segment_holding(mstate m, char *addr)
 {
   msegmentptr sp = &m->seg;
+  ASAN_UNPOISON_MEMORY_REGION(sp, MSEGMENT_SIZE);
   for (;;) {
-    if (addr >= sp->base && addr < sp->base + sp->size)
+    if (addr >= sp->base && addr < sp->base + sp->size) {
+      ASAN_POISON_MEMORY_REGION(sp, MSEGMENT_SIZE);
       return sp;
-    if ((sp = sp->next) == 0)
+    }
+    msegmentptr tmp = sp;
+    sp = sp->next;
+    ASAN_UNPOISON_MEMORY_REGION(sp, MSEGMENT_SIZE);
+    ASAN_POISON_MEMORY_REGION(tmp, MSEGMENT_SIZE);
+    if (sp == 0) {
       return 0;
+    }
   }
 }
 
@@ -1149,6 +1121,8 @@ static void add_segment(mstate m, char *tbase, size_t tsize)
   /* Determine locations and sizes of segment, fenceposts, old top */
   char *old_top = (char *)m->top;
   msegmentptr oldsp = segment_holding(m, old_top);
+  if (oldsp)
+    ASAN_UNPOISON_MEMORY_REGION(oldsp, MSEGMENT_SIZE);
   char *old_end = oldsp->base + oldsp->size;
   size_t ssize = pad_request(sizeof(struct malloc_segment));
   char *rawsp = old_end - (ssize + FOUR_SIZE_T_SIZES + CHUNK_ALIGN_MASK);
@@ -1223,19 +1197,13 @@ static void *alloc_sys(mstate m, size_t nb)
   {
     msegmentptr sp = &m->seg;
     /* Try to merge with an existing segment */
-
-// #if LUAJIT_USE_ASAN
-//     ASAN_UNPOISON_MEMORY_REGION(sp, sizeof(struct malloc_segment));
-// #endif
+    ASAN_UNPOISON_MEMORY_REGION(sp, MSEGMENT_SIZE);
 
     while (sp != 0 && tbase != sp->base + sp->size) {
       msegmentptr tmp = sp;
       sp = sp->next;
-
-// #if LUAJIT_USE_ASAN
-//       ASAN_POISON_MEMORY_REGION(sp, sizeof(struct malloc_segment));
-// #endif
-
+      ASAN_POISON_MEMORY_REGION(tmp, MSEGMENT_SIZE);
+      ASAN_UNPOISON_MEMORY_REGION(sp, MSEGMENT_SIZE);
     }
     if (sp != 0 && segment_holds(sp, m->top))
     { /* append */
@@ -1244,9 +1212,15 @@ static void *alloc_sys(mstate m, size_t nb)
     }
     else
     {
+      ASAN_POISON_MEMORY_REGION(sp, MSEGMENT_SIZE);
       sp = &m->seg;
-      while (sp != 0 && sp->base != tbase + tsize)
+      ASAN_UNPOISON_MEMORY_REGION(sp, MSEGMENT_SIZE);
+      while (sp != 0 && sp->base != tbase + tsize) {
+        msegmentptr tmp = sp;
         sp = sp->next;
+        ASAN_POISON_MEMORY_REGION(tmp, MSEGMENT_SIZE);
+        ASAN_UNPOISON_MEMORY_REGION(sp, MSEGMENT_SIZE);
+      }
       if (sp != 0)
       {
         char *oldbase = sp->base;
