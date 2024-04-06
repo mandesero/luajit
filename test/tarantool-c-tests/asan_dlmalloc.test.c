@@ -28,9 +28,9 @@ static int small_malloc_test(void *test_state)
     size_t algn = (ADDR_ALIGMENT - size % ADDR_ALIGMENT) % ADDR_ALIGMENT;
 
     if (
-        IS_POISONED_REGION(p - READZONE_SIZE, READZONE_SIZE) &&
+        IS_POISONED_REGION(p - REDZONE_SIZE, REDZONE_SIZE) &&
         !IS_POISONED_REGION(p, size) &&
-        IS_POISONED_REGION(p + size, algn + READZONE_SIZE)
+        IS_POISONED_REGION(p + size, algn + REDZONE_SIZE)
     )
         return TEST_EXIT_SUCCESS;
     return TEST_EXIT_FAILURE;
@@ -42,9 +42,9 @@ static int large_malloc_test(void *test_state)
     void *p = lj_mem_new(main_LS, size);
     size_t algn = (ADDR_ALIGMENT - size % ADDR_ALIGMENT) % ADDR_ALIGMENT;
     if (
-        IS_POISONED_REGION(p - READZONE_SIZE, READZONE_SIZE) &&
+        IS_POISONED_REGION(p - REDZONE_SIZE, REDZONE_SIZE) &&
         !IS_POISONED_REGION(p, size) &&
-        IS_POISONED_REGION(p + size, algn + READZONE_SIZE)
+        IS_POISONED_REGION(p + size, algn + REDZONE_SIZE)
     )
         return TEST_EXIT_SUCCESS;
     return TEST_EXIT_FAILURE;
@@ -57,7 +57,7 @@ static int free_test(void *test_state)
     size_t algn = (ADDR_ALIGMENT - size % ADDR_ALIGMENT) % ADDR_ALIGMENT;
     lj_mem_free(main_GS, p, size);
     if (
-        IS_POISONED_REGION(p - READZONE_SIZE, FREADZONE_SIZE + size + algn)
+        IS_POISONED_REGION(p - REDZONE_SIZE, FREDZONE_SIZE + size + algn)
     )
         return TEST_EXIT_SUCCESS;
     return TEST_EXIT_FAILURE;
@@ -79,7 +79,7 @@ static int realloc_test(void *test_state)
     void *newptr = lj_mem_realloc(main_LS, p, size, new_size);
 
     if (
-        IS_POISONED_REGION(ptr - READZONE_SIZE, FREADZONE_SIZE + size + algn)
+        IS_POISONED_REGION(ptr - REDZONE_SIZE, FREDZONE_SIZE + size + algn)
     ) {
         ASAN_UNPOISON_MEMORY_REGION(ptr, size);
         int res = memcmp(ptr, newptr, size);
@@ -87,9 +87,9 @@ static int realloc_test(void *test_state)
             return TEST_EXIT_FAILURE;
         
         if (
-            IS_POISONED_REGION(newptr - READZONE_SIZE, READZONE_SIZE) &&
+            IS_POISONED_REGION(newptr - REDZONE_SIZE, REDZONE_SIZE) &&
             !IS_POISONED_REGION(newptr, new_size) &&
-            IS_POISONED_REGION(newptr + new_size, new_algn + READZONE_SIZE)
+            IS_POISONED_REGION(newptr + new_size, new_algn + REDZONE_SIZE)
         )
             return TEST_EXIT_SUCCESS;
     }

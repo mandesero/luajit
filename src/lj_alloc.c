@@ -249,33 +249,68 @@ static uintptr_t mmap_probe_seed(void)
 
 #if LUAJIT_USE_ASAN
 
+#include <stdio.h>
 #include <sanitizer/asan_interface.h>
 
 /* recommended redzone size from 16 to 2048 bytes (must be a multiple of 8) */
-#define READZONE_SIZE FOUR_SIZE_T_SIZES
+#define REDZONE_SIZE FOUR_SIZE_T_SIZES
 
-/* total readzon size around allocation */
-#define FREADZONE_SIZE READZONE_SIZE << 1
+/* total redzone size around allocation */
+#define FREDZONE_SIZE (REDZONE_SIZE << 1)
 
 /* multiple of the allocated memory size */
-#define SIZE_ALIGMENT SIZE_T_SIZE
+#define SIZE_ALIGMENT MALLOC_ALIGNMENT
 
 /* multiple of the allocated memory address */
-#define ADDR_ALIGMENT SIZE_T_SIZE
+#define ADDR_ALIGMENT MALLOC_ALIGNMENT
 
 #define FREE_BLOCK_TYPE uint64_t
-
 #define FREE_BLOCK_SIZE sizeof(FREE_BLOCK_TYPE)
 
-typedef struct {
-    char data[READZONE_SIZE];
-} rz;
-
-/* casting the address to the nearest multiple of alignment from above */
+/* casting to the nearest multiple of alignment from above */
 void *align_up(void* ptr, size_t alignment)
 {
   uintptr_t p = (uintptr_t)ptr;
   return (void*)((p + alignment - 1) & ~(alignment - 1));
+}
+
+void *asan_memory_region(void *ptr, size_t mem_size, size_t poison_size)
+{
+  if (ptr == NULL)
+    return NULL;
+  size_t* sptr = (size_t*)ptr;
+  ASAN_UNPOISON_MEMORY_REGION(ptr, TWO_SIZE_T_SIZES);
+  sptr[0] = mem_size;
+  sptr[1] = poison_size;
+  ASAN_POISON_MEMORY_REGION(ptr, poison_size);
+  ptr += REDZONE_SIZE;
+  ASAN_UNPOISON_MEMORY_REGION(ptr, mem_size);
+  return ptr;
+}
+
+void check_mem_for_free(void *ptr, size_t size) {
+  FREE_BLOCK_TYPE *tmp = (FREE_BLOCK_TYPE *)ptr;
+  for (int i=0; i < size / FREE_BLOCK_SIZE; ++i) {
+    tmp[i] = tmp[i];
+  }
+  uint8_t *b = (uint8_t *)(ptr) + (size - size % FREE_BLOCK_SIZE);
+  for (int i=0; i < size % FREE_BLOCK_SIZE; ++i) {
+    b[i] = b[i];
+  }
+}
+
+size_t asan_get_mem_size(void *ptr) {
+  ASAN_UNPOISON_MEMORY_REGION(ptr - REDZONE_SIZE, SIZE_T_SIZE);
+  size_t mem_size = *((size_t*)(ptr - REDZONE_SIZE));
+  ASAN_POISON_MEMORY_REGION(ptr - REDZONE_SIZE, SIZE_T_SIZE);
+  return mem_size;
+}
+
+size_t asan_get_poison_size(void *ptr) {
+  ASAN_UNPOISON_MEMORY_REGION(ptr - REDZONE_SIZE + SIZE_T_SIZE, SIZE_T_SIZE);
+  size_t poison_size = *((size_t*)(ptr - REDZONE_SIZE + SIZE_T_SIZE));
+  ASAN_POISON_MEMORY_REGION(ptr - REDZONE_SIZE + SIZE_T_SIZE, SIZE_T_SIZE);
+  return poison_size;
 }
 
 #endif
@@ -287,68 +322,60 @@ static void *mmap_probe(size_t size)
   static uintptr_t hint_prng = 0;
   int olderr = errno;
   int retry;
-
 #if LUAJIT_USE_ASAN
-  size_t osz = size;
-  size = (size_t)align_up(size, SIZE_ALIGMENT) + FREADZONE_SIZE;
-#endif
-
-  for (retry = 0; retry < LJ_ALLOC_MMAP_PROBE_MAX; retry++)
-  {
+  size_t mem_size = size;
+  size = (size_t)align_up((void *)size, SIZE_ALIGMENT) + FREDZONE_SIZE;
+  for (retry = 0; retry < LJ_ALLOC_MMAP_PROBE_MAX; retry++) {
     void *p = mmap((void *)hint_addr, size, MMAP_PROT, MMAP_FLAGS_PROBE, -1, 0);
     uintptr_t addr = (uintptr_t)p;
     if ((addr >> LJ_ALLOC_MBITS) == 0 && addr >= LJ_ALLOC_MMAP_PROBE_LOWER &&
-        ((addr + size) >> LJ_ALLOC_MBITS) == 0)
-    {
+	      ((addr + size) >> LJ_ALLOC_MBITS) == 0) {
       /* We got a suitable address. Bump the hint address. */
       hint_addr = addr + size;
       errno = olderr;
 
-#if LUAJIT_USE_ASAN
-      p += READZONE_SIZE;
-      ASAN_POISON_MEMORY_REGION(p - READZONE_SIZE, size);
-      ASAN_UNPOISON_MEMORY_REGION(p, osz);
-#endif
-
+      return asan_memory_region(p, mem_size, size);
+    }
+#else
+  for (retry = 0; retry < LJ_ALLOC_MMAP_PROBE_MAX; retry++) {
+    void *p = mmap((void *)hint_addr, size, MMAP_PROT, MMAP_FLAGS_PROBE, -1, 0);
+    uintptr_t addr = (uintptr_t)p;
+    if ((addr >> LJ_ALLOC_MBITS) == 0 && addr >= LJ_ALLOC_MMAP_PROBE_LOWER &&
+	      ((addr + size) >> LJ_ALLOC_MBITS) == 0) {
+      /* We got a suitable address. Bump the hint address. */
+      hint_addr = addr + size;
+      errno = olderr;
       return p;
     }
-    if (p != MFAIL)
-    {
+#endif
+    if (p != MFAIL) {
       munmap(p, size);
-    }
-    else if (errno == ENOMEM)
-    {
+    } else if (errno == ENOMEM) {
       return MFAIL;
     }
-    if (hint_addr)
-    {
+    if (hint_addr) {
       /* First, try linear probing. */
-      if (retry < LJ_ALLOC_MMAP_PROBE_LINEAR)
-      {
+      if (retry < LJ_ALLOC_MMAP_PROBE_LINEAR) {
         hint_addr += 0x1000000;
         if (((hint_addr + size) >> LJ_ALLOC_MBITS) != 0)
           hint_addr = 0;
         continue;
-      }
-      else if (retry == LJ_ALLOC_MMAP_PROBE_LINEAR)
-      {
+      } else if (retry == LJ_ALLOC_MMAP_PROBE_LINEAR) {
         /* Next, try a no-hint probe to get back an ASLR address. */
         hint_addr = 0;
         continue;
-      }
+            }
     }
     /* Finally, try pseudo-random probing. */
-    if (LJ_UNLIKELY(hint_prng == 0))
-    {
+    if (LJ_UNLIKELY(hint_prng == 0)) {
       hint_prng = mmap_probe_seed();
     }
     /* The unsuitable address we got has some ASLR PRNG bits. */
-    hint_addr ^= addr & ~((uintptr_t)(LJ_PAGESIZE - 1));
-    do
-    { /* The PRNG itself is very weak, but see above. */
+    hint_addr ^= addr & ~((uintptr_t)(LJ_PAGESIZE-1));
+    do {  /* The PRNG itself is very weak, but see above. */
       hint_prng = hint_prng * 1103515245 + 12345;
       hint_addr ^= hint_prng * (uintptr_t)LJ_PAGESIZE;
-      hint_addr &= (((uintptr_t)1 << LJ_ALLOC_MBITS) - 1);
+      hint_addr &= (((uintptr_t)1 << LJ_ALLOC_MBITS)-1);
     } while (hint_addr < LJ_ALLOC_MMAP_PROBE_LOWER);
   }
   errno = olderr;
@@ -367,58 +394,44 @@ static void *mmap_probe(size_t size)
 
 static void *mmap_map32(size_t size)
 {
-#if LUAJIT_USE_ASAN
-
 #if LJ_ALLOC_MMAP_PROBE
   static int fallback = 0;
   if (fallback)
     return mmap_probe(size);
 #endif
+
+#if LUAJIT_USE_ASAN
   {
     int olderr = errno;
-    size_t osz = size;
-    size = (size_t)align_up(size, SIZE_ALIGMENT) + FREADZONE_SIZE;
-    void *ptr = mmap((void *)LJ_ALLOC_MMAP32_START, size, MMAP_PROT, MAP_32BIT | MMAP_FLAGS, -1, 0);
+    size_t mem_size = size;
+    size = (size_t)align_up((void *)size, SIZE_ALIGMENT) + FREDZONE_SIZE;
+    void *ptr = mmap((void *)LJ_ALLOC_MMAP32_START, size, MMAP_PROT, MAP_32BIT|MMAP_FLAGS, -1, 0);
     errno = olderr;
     if (ptr != MFAIL)
-    {
-      ptr += READZONE_SIZE;
-      ASAN_POISON_MEMORY_REGION(ptr - READZONE_SIZE, size);
-      ASAN_UNPOISON_MEMORY_REGION(ptr, osz);
-    }
+      return asan_memory_region(ptr, mem_size, size);
+    size = mem_size;
     /* This only allows 1GB on Linux. So fallback to probing to get 2GB. */
 #if LJ_ALLOC_MMAP_PROBE
-    if (ptr == MFAIL)
-    {
+    if (ptr == MFAIL) {
       fallback = 1;
       return mmap_probe(size);
     }
 #endif
-    return ptr;
   }
-
 #else
-
-#if LJ_ALLOC_MMAP_PROBE
-  static int fallback = 0;
-  if (fallback)
-    return mmap_probe(size);
-#endif
   {
     int olderr = errno;
-    void *ptr = mmap((void *)LJ_ALLOC_MMAP32_START, size, MMAP_PROT, MAP_32BIT | MMAP_FLAGS, -1, 0);
+    void *ptr = mmap((void *)LJ_ALLOC_MMAP32_START, size, MMAP_PROT, MAP_32BIT|MMAP_FLAGS, -1, 0);
     errno = olderr;
     /* This only allows 1GB on Linux. So fallback to probing to get 2GB. */
 #if LJ_ALLOC_MMAP_PROBE
-    if (ptr == MFAIL)
-    {
+    if (ptr == MFAIL) {
       fallback = 1;
       return mmap_probe(size);
     }
 #endif
     return ptr;
   }
-
 #endif
 }
 
@@ -431,23 +444,19 @@ static void *mmap_map32(size_t size)
 #else
 static void *CALL_MMAP(size_t size)
 {
+#if LUAJIT_USE_ASAN
   int olderr = errno;
-
-#if LUAJIT_USE_ASAN
-  size_t osz = size;
-  size = (size_t)align_up(size, SIZE_ALIGMENT) + FREADZONE_SIZE;
-#endif
-
+  size_t mem_size = size;
+  size = (size_t)align_up((void *)size, SIZE_ALIGMENT) + FREDZONE_SIZE;
   void *ptr = mmap(NULL, size, MMAP_PROT, MMAP_FLAGS, -1, 0);
-
-#if LUAJIT_USE_ASAN
-  ptr += READZONE_SIZE;
-  ASAN_POISON_MEMORY_REGION(ptr - READZONE_SIZE, size);
-  ASAN_UNPOISON_MEMORY_REGION(ptr, osz);
-#endif
-
+  errno = olderr;
+  return asan_memory_region(ptr, mem_size, size);
+#else
+  int olderr = errno;
+  void *ptr = mmap(NULL, size, MMAP_PROT, MMAP_FLAGS, -1, 0);
   errno = olderr;
   return ptr;
+#endif
 }
 #endif
 
@@ -465,67 +474,55 @@ static void init_mmap(void)
 
 #endif
 
-#if LUAJIT_USE_ASAN
-void check_mem_for_free(void *ptr, size_t size) {
-  FREE_BLOCK_TYPE *tmp = (FREE_BLOCK_TYPE *)ptr;
-  for (int i=0; i < size / FREE_BLOCK_SIZE; ++i) {
-    tmp[i] = tmp[i];
-  }
-  uint8_t *b = (uint8_t *)(ptr) + (size - size % FREE_BLOCK_SIZE);
-  for (int i=0; i < size % FREE_BLOCK_SIZE; ++i) {
-    b[i] = b[i];
-  }
-}
-#endif
-
 static int CALL_MUNMAP(void *ptr, size_t size)
 {
-  int olderr = errno;
-
 #if LUAJIT_USE_ASAN
+  int olderr = errno;
   check_mem_for_free(ptr, size);
-  int ret = munmap(ptr - READZONE_SIZE, size + FREADZONE_SIZE);
+  size_t poison_size = asan_get_poison_size(ptr);
+  ptr -= REDZONE_SIZE;
+  int ret = munmap(ptr, poison_size);
   if (ret == 0) {
-    ASAN_POISON_MEMORY_REGION(ptr, size);
+    ASAN_POISON_MEMORY_REGION(ptr, poison_size);
   }
-#else
-  int ret = munmap(ptr, size);
-#endif
-  
   errno = olderr;
   return ret;
+#else
+  int olderr = errno;
+  int ret = munmap(ptr, size);
+  errno = olderr;
+  return ret;
+#endif
 }
-#include <stdio.h>
 
 #if LJ_ALLOC_MREMAP
 
 /* Need to define _GNU_SOURCE to get the mremap prototype. */
 static void *CALL_MREMAP_(void *ptr, size_t osz, size_t nsz, int flags)
 {
-  int olderr = errno;
 #if LUAJIT_USE_ASAN
-  if (nsz < osz)
-  {
-    ptr = mremap(ptr, osz, nsz, flags);
-    errno = olderr;
-    return ptr;
+  int olderr = errno;
+  size_t old_mem_size = asan_get_mem_size(ptr);
+  size_t old_poison_size = asan_get_poison_size(ptr);
+
+  size_t new_mem_size = nsz;
+  nsz = (size_t)align_up((void *)nsz, SIZE_ALIGMENT) + FREDZONE_SIZE;
+
+  void *new_ptr = mremap(ptr - REDZONE_SIZE, old_poison_size, nsz, flags);
+  errno = olderr;
+  if (new_ptr != -1) {
+    /* может вернуть указатель на ту же память */
+    ASAN_POISON_MEMORY_REGION(ptr - REDZONE_SIZE, old_poison_size);
+    return asan_memory_region(new_ptr, new_mem_size, nsz);
   }
-  void *new_ptr = mmap_probe(nsz);
-  if (new_ptr != MFAIL)
-  {
-    memcpy(new_ptr, ptr, osz);
-    CALL_MUNMAP(ptr, osz);
-    ptr = new_ptr;
-  }
-  else
-  {
-    ptr = mremap(ptr, osz, nsz, flags);
-  }
+  return ptr;
+
 #else
+  int olderr = errno;
   ptr = mremap(ptr, osz, nsz, flags);
-#endif
   errno = olderr;
   return ptr;
+#endif
 }
 
 #define CALL_MREMAP(addr, osz, nsz, mv) CALL_MREMAP_((addr), (osz), (nsz), (mv))
@@ -590,8 +587,8 @@ typedef unsigned int flag_t;           /* The type of various bit flag sets */
 #if LUAJIT_USE_ASAN
 
 /* conversion from malloc headers to user pointers, and back */
-#define chunk2mem(p)		((void *)((char *)(p) + TWO_SIZE_T_SIZES + READZONE_SIZE))
-#define mem2chunk(mem)		((mchunkptr)((char *)(mem) - TWO_SIZE_T_SIZES - READZONE_SIZE))
+#define chunk2mem(p)		((void *)((char *)(p) + TWO_SIZE_T_SIZES + REDZONE_SIZE))
+#define mem2chunk(mem)		((mchunkptr)((char *)(mem) - TWO_SIZE_T_SIZES - REDZONE_SIZE))
 #else
 
 /* conversion from malloc headers to user pointers, and back */
@@ -1484,7 +1481,7 @@ static LJ_NOINLINE void *lj_alloc_malloc(void *msp, size_t nsize)
 #if LUAJIT_USE_ASAN
   size_t mem_size = nsize;
   size_t align_size = align_up(mem_size, SIZE_ALIGMENT);
-  size_t poison_size = align_size + FREADZONE_SIZE;
+  size_t poison_size = align_size + FREDZONE_SIZE;
   nsize = poison_size + TWO_SIZE_T_SIZES;
 #endif
 
@@ -1513,7 +1510,7 @@ static LJ_NOINLINE void *lj_alloc_malloc(void *msp, size_t nsize)
 #if LUAJIT_USE_ASAN
       *(size_t *)((char*)mem - TWO_SIZE_T_SIZES) = mem_size;
       *(size_t *)((char*)mem - SIZE_T_SIZE) = poison_size;
-      ASAN_POISON_MEMORY_REGION(mem - READZONE_SIZE, poison_size);
+      ASAN_POISON_MEMORY_REGION(mem - REDZONE_SIZE, poison_size);
       ASAN_UNPOISON_MEMORY_REGION(mem, mem_size);
 #endif
 
@@ -1548,7 +1545,7 @@ static LJ_NOINLINE void *lj_alloc_malloc(void *msp, size_t nsize)
 #if LUAJIT_USE_ASAN
         *(size_t *)((char*)mem - TWO_SIZE_T_SIZES) = mem_size;
         *(size_t *)((char *)mem - SIZE_T_SIZE) = poison_size;
-        ASAN_POISON_MEMORY_REGION(mem - READZONE_SIZE, poison_size);
+        ASAN_POISON_MEMORY_REGION(mem - REDZONE_SIZE, poison_size);
         ASAN_UNPOISON_MEMORY_REGION(mem, mem_size);
 #endif
 
@@ -1560,7 +1557,7 @@ static LJ_NOINLINE void *lj_alloc_malloc(void *msp, size_t nsize)
 #if LUAJIT_USE_ASAN
         *(size_t *)((char*)mem - TWO_SIZE_T_SIZES) = mem_size;
         *(size_t *)((char*)mem - SIZE_T_SIZE) = poison_size;
-        ASAN_POISON_MEMORY_REGION(mem - READZONE_SIZE, poison_size);
+        ASAN_POISON_MEMORY_REGION(mem - REDZONE_SIZE, poison_size);
         ASAN_UNPOISON_MEMORY_REGION(mem, mem_size);
 #endif
 
@@ -1581,7 +1578,7 @@ static LJ_NOINLINE void *lj_alloc_malloc(void *msp, size_t nsize)
 #if LUAJIT_USE_ASAN
       *(size_t *)((char*)mem - TWO_SIZE_T_SIZES) = mem_size;
       *(size_t *)((char*)mem - SIZE_T_SIZE) = poison_size;
-      ASAN_POISON_MEMORY_REGION(mem - READZONE_SIZE, poison_size);
+      ASAN_POISON_MEMORY_REGION(mem - REDZONE_SIZE, poison_size);
       ASAN_UNPOISON_MEMORY_REGION(mem, mem_size);
 #endif
 
@@ -1612,7 +1609,7 @@ static LJ_NOINLINE void *lj_alloc_malloc(void *msp, size_t nsize)
 #if LUAJIT_USE_ASAN
     *(size_t *)((char*)mem - TWO_SIZE_T_SIZES) = mem_size;
     *(size_t *)((char*)mem - SIZE_T_SIZE) = poison_size;
-    ASAN_POISON_MEMORY_REGION(mem - READZONE_SIZE, poison_size);
+    ASAN_POISON_MEMORY_REGION(mem - REDZONE_SIZE, poison_size);
     ASAN_UNPOISON_MEMORY_REGION(mem, mem_size);
 #endif
 
@@ -1630,7 +1627,7 @@ static LJ_NOINLINE void *lj_alloc_malloc(void *msp, size_t nsize)
 #if LUAJIT_USE_ASAN
     *(size_t *)((char*)mem - TWO_SIZE_T_SIZES) = mem_size;
     *(size_t *)((char*)mem - SIZE_T_SIZE) = poison_size;
-    ASAN_POISON_MEMORY_REGION(mem - READZONE_SIZE, poison_size);
+    ASAN_POISON_MEMORY_REGION(mem - REDZONE_SIZE, poison_size);
     ASAN_UNPOISON_MEMORY_REGION(mem, mem_size);
 #endif
 
@@ -1641,7 +1638,7 @@ static LJ_NOINLINE void *lj_alloc_malloc(void *msp, size_t nsize)
 #if LUAJIT_USE_ASAN
   *(size_t *)((char*)mem - TWO_SIZE_T_SIZES) = mem_size;
   *(size_t *)((char*)mem - SIZE_T_SIZE) = poison_size;
-  ASAN_POISON_MEMORY_REGION(mem - READZONE_SIZE, poison_size);
+  ASAN_POISON_MEMORY_REGION(mem - REDZONE_SIZE, poison_size);
   ASAN_UNPOISON_MEMORY_REGION(mem, mem_size);
 #endif
 
@@ -1658,7 +1655,7 @@ static LJ_NOINLINE void *lj_alloc_free(void *msp, void *ptr)
       size_t poison_size = *(size_t*)(ptr - SIZE_T_SIZE);
 
       check_mem_for_free(ptr, mem_size);
-      ASAN_POISON_MEMORY_REGION(ptr - READZONE_SIZE, poison_size);
+      ASAN_POISON_MEMORY_REGION(ptr - REDZONE_SIZE, poison_size);
     }
     return NULL;
 #else
@@ -1773,7 +1770,7 @@ static LJ_NOINLINE void *lj_alloc_realloc(void *msp, void *ptr, size_t nsize)
       return NULL;
 
     memcpy(newmem, ptr, mem_size);
-    ASAN_POISON_MEMORY_REGION(ptr - READZONE_SIZE, poison_size);
+    ASAN_POISON_MEMORY_REGION(ptr - REDZONE_SIZE, poison_size);
     return newmem;
 
   #else

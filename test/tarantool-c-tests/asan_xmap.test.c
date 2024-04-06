@@ -34,9 +34,9 @@ static int mmap_probe_test(void *test_state)
         return TEST_EXIT_FAILURE;
     
     if (
-        IS_POISONED_REGION(p - READZONE_SIZE, READZONE_SIZE) &&
+        IS_POISONED_REGION(p - REDZONE_SIZE, REDZONE_SIZE) &&
         !IS_POISONED_REGION(p, size) &&
-        IS_POISONED_REGION(p + size, algn + READZONE_SIZE)
+        IS_POISONED_REGION(p + size, algn + REDZONE_SIZE)
     )
         return TEST_EXIT_SUCCESS;
 
@@ -55,7 +55,7 @@ static int munmap_test(void *test_state)
 
     FREE(p, size);
     if (
-        IS_POISONED_REGION(p - READZONE_SIZE, FREADZONE_SIZE + size + algn)
+        IS_POISONED_REGION(p - REDZONE_SIZE, FREDZONE_SIZE + size + algn)
     )
         return TEST_EXIT_SUCCESS;
     return TEST_EXIT_FAILURE;
@@ -64,10 +64,10 @@ static int munmap_test(void *test_state)
 
 static int mremap_test(void *test_state)
 {
-    size_t size = 20;
+    size_t size = 23;
     size_t new_size = size * 2;
-    size_t algn = (ADDR_ALIGMENT - size % ADDR_ALIGMENT) % ADDR_ALIGMENT;
-    size_t new_algn = (ADDR_ALIGMENT - new_size % ADDR_ALIGMENT) % ADDR_ALIGMENT;
+    size_t algn = size - (size_t)align_up((void *)size, SIZE_ALIGMENT);
+    size_t new_algn = new_size - (size_t)align_up((void *)new_size, SIZE_ALIGMENT);
 
     void *p = MALLOC(size);
     void *cp = MALLOC(size);
@@ -89,17 +89,16 @@ static int mremap_test(void *test_state)
         return TEST_EXIT_FAILURE;
 
     uint8_t *np = (uint8_t *)newptr;
-    if (
-        IS_POISONED_REGION(p - READZONE_SIZE, FREADZONE_SIZE + size + algn)
+    if ( (newptr == p) || IS_POISONED_REGION(p - REDZONE_SIZE, FREDZONE_SIZE + size + algn)
     ) {
         int res = memcmp(cp, np, size);
         if (res != 0)
             return TEST_EXIT_FAILURE;
 
         if (
-            IS_POISONED_REGION(newptr - READZONE_SIZE, READZONE_SIZE) &&
+            IS_POISONED_REGION(newptr - REDZONE_SIZE, REDZONE_SIZE) &&
             !IS_POISONED_REGION(newptr, new_size) &&
-            IS_POISONED_REGION(newptr + new_size, new_algn + READZONE_SIZE)
+            IS_POISONED_REGION(newptr + new_size, new_algn + REDZONE_SIZE)
         )
             return TEST_EXIT_SUCCESS;
     }
