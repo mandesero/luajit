@@ -557,6 +557,9 @@ static void *CALL_MREMAP_(void *ptr, size_t osz, size_t nsz, int flags)
 struct malloc_chunk {
   size_t               prev_foot;  /* Size of previous chunk (if free).  */
   size_t               head;       /* Size and inuse bits. */
+
+  size_t rz[REDZONE_SIZE / SIZE_T_SIZE];
+
   struct malloc_chunk *fd;         /* double links -- used only if free. */
   struct malloc_chunk *bk;
 };
@@ -589,6 +592,11 @@ typedef unsigned int flag_t;           /* The type of various bit flag sets */
 /* conversion from malloc headers to user pointers, and back */
 #define chunk2mem(p)		((void *)((char *)(p) + TWO_SIZE_T_SIZES + REDZONE_SIZE))
 #define mem2chunk(mem)		((mchunkptr)((char *)(mem) - TWO_SIZE_T_SIZES - REDZONE_SIZE))
+
+
+#define _chunk2mem(p)		((void *)((char *)(p) + TWO_SIZE_T_SIZES))
+#define _mem2chunk(mem)		((mchunkptr)((char *)(mem) - TWO_SIZE_T_SIZES))
+#define _align_as_chunk(A)	(mchunkptr)((A) + align_offset(_chunk2mem(A)))
 #else
 
 /* conversion from malloc headers to user pointers, and back */
@@ -667,6 +675,9 @@ struct malloc_tree_chunk {
   /* The first four fields must be compatible with malloc_chunk */
   size_t                    prev_foot;
   size_t                    head;
+
+  size_t rz[REDZONE_SIZE / SIZE_T_SIZE];
+
   struct malloc_tree_chunk *fd;
   struct malloc_tree_chunk *bk;
 
@@ -1121,8 +1132,9 @@ static void add_segment(mstate m, char *tbase, size_t tsize)
   /* Determine locations and sizes of segment, fenceposts, old top */
   char *old_top = (char *)m->top;
   msegmentptr oldsp = segment_holding(m, old_top);
-  if (oldsp)
-    ASAN_UNPOISON_MEMORY_REGION(oldsp, MSEGMENT_SIZE);
+
+  ASAN_UNPOISON_MEMORY_REGION(oldsp, sizeof(struct malloc_segment));
+
   char *old_end = oldsp->base + oldsp->size;
   size_t ssize = pad_request(sizeof(struct malloc_segment));
   char *rawsp = old_end - (ssize + FOUR_SIZE_T_SIZES + CHUNK_ALIGN_MASK);
@@ -1418,15 +1430,23 @@ void *lj_alloc_create(void)
   if (tbase != CMFAIL) {
     size_t msize = pad_request(sizeof(struct malloc_state));
     mchunkptr mn;
-    mchunkptr msp = align_as_chunk(tbase);
-    mstate m = (mstate)(chunk2mem(msp));
+    mchunkptr msp = _align_as_chunk(tbase);
+
+    /* ??? */
+    mstate m = (mstate)(chunk2mem(msp) - REDZONE_SIZE);
+    // mstate m = (mstate)(chunk2mem(msp));
+    
     memset(m, 0, msize);
     msp->head = (msize|PINUSE_BIT|CINUSE_BIT);
     m->seg.base = tbase;
     m->seg.size = tsize;
     m->release_checks = MAX_RELEASE_CHECK_RATE;
     init_bins(m);
-    mn = next_chunk(mem2chunk(m));
+
+    /* ??? */
+    mn = next_chunk(mem2chunk(m) + REDZONE_SIZE);
+    // mn = next_chunk(mem2chunk(m));
+
     init_top(m, mn, (size_t)((tbase + tsize) - (char *)mn) - TOP_FOOT_SIZE);
     return m;
   }
