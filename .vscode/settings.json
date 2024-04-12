@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "asan_interface.h": "c",
-        "common_interface_defs.h": "c"
+        "common_interface_defs.h": "c",
+        "lj_def.h": "c"
     }
 }

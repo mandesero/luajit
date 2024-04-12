@@ -495,6 +495,23 @@ static int CALL_MUNMAP(void *ptr, size_t size)
 #endif
 }
 
+
+#if LUAJIT_USE_ASAN
+static int CALL_MUNMAP_chunk(void *ptr, size_t size)
+{
+  int olderr = errno;
+  // check_mem_for_free(ptr, size);
+  size_t poison_size = asan_get_poison_size(ptr);
+  ptr -= REDZONE_SIZE;
+  int ret = munmap(ptr, poison_size);
+  if (ret == 0) {
+    ASAN_POISON_MEMORY_REGION(ptr, poison_size);
+  }
+  errno = olderr;
+  return ret;
+}
+#endif
+
 #if LJ_ALLOC_MREMAP
 
 /* Need to define _GNU_SOURCE to get the mremap prototype. */
@@ -557,8 +574,6 @@ static void *CALL_MREMAP_(void *ptr, size_t osz, size_t nsz, int flags)
 struct malloc_chunk {
   size_t               prev_foot;  /* Size of previous chunk (if free).  */
   size_t               head;       /* Size and inuse bits. */
-
-  size_t rz[REDZONE_SIZE / SIZE_T_SIZE];
 
   struct malloc_chunk *fd;         /* double links -- used only if free. */
   struct malloc_chunk *bk;
@@ -676,8 +691,6 @@ struct malloc_tree_chunk {
   size_t                    prev_foot;
   size_t                    head;
 
-  size_t rz[REDZONE_SIZE / SIZE_T_SIZE];
-
   struct malloc_tree_chunk *fd;
   struct malloc_tree_chunk *bk;
 
@@ -793,7 +806,7 @@ static int has_segment_link(mstate m, msegmentptr ss)
   noncontiguous segments are added.
 */
 #define TOP_FOOT_SIZE\
-  (align_offset(chunk2mem(0))+pad_request(sizeof(struct malloc_segment))+MIN_CHUNK_SIZE)
+  (align_offset(_chunk2mem(0))+pad_request(sizeof(struct malloc_segment))+MIN_CHUNK_SIZE)
 
 /* ---------------------------- Indexing Bins ---------------------------- */
 
@@ -1070,7 +1083,7 @@ static mchunkptr direct_resize(mchunkptr oldp, size_t nb)
 static void init_top(mstate m, mchunkptr p, size_t psize)
 {
   /* Ensure alignment */
-  size_t offset = align_offset(chunk2mem(p));
+  size_t offset = align_offset(_chunk2mem(p));
   p = (mchunkptr)((char *)p + offset);
   psize -= offset;
 
@@ -1433,7 +1446,7 @@ void *lj_alloc_create(void)
     mchunkptr msp = _align_as_chunk(tbase);
 
     /* ??? */
-    mstate m = (mstate)(chunk2mem(msp) - REDZONE_SIZE);
+    mstate m = (mstate)(_chunk2mem(msp));
     // mstate m = (mstate)(chunk2mem(msp));
     
     memset(m, 0, msize);
@@ -1444,7 +1457,7 @@ void *lj_alloc_create(void)
     init_bins(m);
 
     /* ??? */
-    mn = next_chunk(mem2chunk(m) + REDZONE_SIZE);
+    mn = next_chunk(_mem2chunk(m));
     // mn = next_chunk(mem2chunk(m));
 
     init_top(m, mn, (size_t)((tbase + tsize) - (char *)mn) - TOP_FOOT_SIZE);
@@ -1461,7 +1474,7 @@ void lj_alloc_destroy(void *msp)
     char *base = sp->base;
     size_t size = sp->size;
     sp = sp->next;
-    CALL_MUNMAP(base, size);
+    CALL_MUNMAP_chunk(base, size);
   }
 }
 
