@@ -2,10 +2,10 @@
 ** This file has been pre-processed with DynASM.
 ** http://luajit.org/dynasm.html
 ** DynASM version 1.4.0, DynASM x64 version 1.4.0
-** DO NOT EDIT! The original file is in "/home/mandesero/Desktop/luajit/src/vm_x64.dasc".
+** DO NOT EDIT! The original file is in "/home/mandesero_wsl/luajit/src/vm_x64.dasc".
 */
 
-#line 1 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 //|// Low-level VM code for x64 CPUs in LJ_GC64 mode.
 //|// Bytecode interpreter, fast functions and helper functions.
 //|// Copyright (C) 2005-2017 Mike Pall. See Copyright Notice in luajit.h
@@ -14,12 +14,12 @@
 #if DASM_VERSION != 10400
 #error "Version mismatch between DynASM and included encoding engine"
 #endif
-#line 6 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 6 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 //|.section code_op, code_sub
 #define DASM_SECTION_CODE_OP	0
 #define DASM_SECTION_CODE_SUB	1
 #define DASM_MAXSECTION		2
-#line 7 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 7 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 //|
 //|.actionlist build_actionlist
 static const unsigned char build_actionlist[17961] = {
@@ -892,7 +892,7 @@ static const unsigned char build_actionlist[17961] = {
   254,0
 };
 
-#line 9 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 9 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 //|.globals GLOB_
 enum {
   GLOB_vm_returnp,
@@ -1053,7 +1053,7 @@ enum {
   GLOB_BC_TSETS_Z,
   GLOB__MAX
 };
-#line 10 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 10 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 //|.globalnames globnames
 static const char *const globnames[] = {
   "vm_returnp",
@@ -1214,7 +1214,7 @@ static const char *const globnames[] = {
   "BC_TSETS_Z",
   (const char *)0
 };
-#line 11 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 11 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 //|.externnames extnames
 static const char *const extnames[] = {
   "lj_state_growstack",
@@ -1279,7 +1279,7 @@ static const char *const extnames[] = {
   "lj_tab_reasize",
   (const char *)0
 };
-#line 12 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 12 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 //|
 //|//-----------------------------------------------------------------------
 //|
@@ -1355,46 +1355,46 @@ static const char *const extnames[] = {
 //|// Type definitions. Some of these are only used for documentation.
 //|.type L,		lua_State
 #define Dt1(_V) (int)(ptrdiff_t)&(((lua_State *)0)_V)
-#line 86 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 86 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 //|.type GL,		global_State
 #define Dt2(_V) (int)(ptrdiff_t)&(((global_State *)0)_V)
-#line 87 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 87 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 //|.type TVALUE,		TValue
 #define Dt3(_V) (int)(ptrdiff_t)&(((TValue *)0)_V)
-#line 88 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 88 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 //|.type GCOBJ,		GCobj
 #define Dt4(_V) (int)(ptrdiff_t)&(((GCobj *)0)_V)
-#line 89 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 89 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 //|.type STR,		GCstr
 #define Dt5(_V) (int)(ptrdiff_t)&(((GCstr *)0)_V)
-#line 90 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 90 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 //|.type TAB,		GCtab
 #define Dt6(_V) (int)(ptrdiff_t)&(((GCtab *)0)_V)
-#line 91 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 91 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 //|.type LFUNC,		GCfuncL
 #define Dt7(_V) (int)(ptrdiff_t)&(((GCfuncL *)0)_V)
-#line 92 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 92 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 //|.type CFUNC,		GCfuncC
 #define Dt8(_V) (int)(ptrdiff_t)&(((GCfuncC *)0)_V)
-#line 93 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 93 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 //|.type PROTO,		GCproto
 #define Dt9(_V) (int)(ptrdiff_t)&(((GCproto *)0)_V)
-#line 94 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 94 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 //|.type UPVAL,		GCupval
 #define DtA(_V) (int)(ptrdiff_t)&(((GCupval *)0)_V)
-#line 95 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 95 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 //|.type NODE,		Node
 #define DtB(_V) (int)(ptrdiff_t)&(((Node *)0)_V)
-#line 96 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 96 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 //|.type NARGS,		int
 #define DtC(_V) (int)(ptrdiff_t)&(((int *)0)_V)
-#line 97 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 97 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 //|.type TRACE,		GCtrace
 #define DtD(_V) (int)(ptrdiff_t)&(((GCtrace *)0)_V)
-#line 98 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 98 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 //|.type SBUF,		SBuf
 #define DtE(_V) (int)(ptrdiff_t)&(((SBuf *)0)_V)
-#line 99 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 99 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 //|
 //|// Stack layout while in interpreter. Must match with lj_frame.h.
 //|//-----------------------------------------------------------------------
@@ -1738,7 +1738,7 @@ static void build_subroutines(BuildCtx *ctx)
 {
   //|.code_sub
   dasm_put(Dst, 0);
-#line 441 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 441 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|
   //|//-----------------------------------------------------------------------
   //|//-- Return handling ----------------------------------------------------
@@ -1773,7 +1773,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|  // Return to C.
   //|  set_vmstate_sync_base CFUNC
   dasm_put(Dst, 2, FRAME_P, (unsigned int)((int64_t)~((uint64_t)2<<47)), (unsigned int)(((int64_t)~((uint64_t)2<<47))>>32), FRAME_TYPE, FRAME_C, FRAME_TYPE, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP);
-#line 474 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 474 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  and PC, -8
   //|  sub PC, BASE
   //|  neg PC				// Previous base = BASE - delta.
@@ -1808,7 +1808,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|  // DISPATCH required to set properly.
   //|  restore_vmstate			// Caveat: uses TMPRd (r10d).
   dasm_put(Dst, 81, DISPATCH_GL(top_frame_info.top_frame), DISPATCH_GL(vmstate), ~LJ_VMST_CFUNC, Dt1(->base), Dt1(->top), Dt1(->cframe));
-#line 507 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 507 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  restoreregs
   //|  ret
   //|
@@ -1836,7 +1836,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|  // - A return back from a lua_call() with (high) nresults adjustment.
   //|  mov L:RB->top, BASE		// Save current top held in BASE (yes).
   dasm_put(Dst, 186, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, Dt1(->base), DISPATCH_GL(top_frame_info.top_frame), DISPATCH_GL(vmstate), Dt1(->maxstack), LJ_TNIL);
-#line 533 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 533 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  mov MULTRES, RDd			// Need to fill only remainder with nil.
   //|  mov CARG2d, RAd
   //|  mov CARG1, L:RB
@@ -1873,7 +1873,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|  and CARG1, CFRAME_RAWMASK
   //|  mov rsp, CARG1
   dasm_put(Dst, 277, Dt1(->top), Dt1(->top), LUA_YIELD, Dt1(->glref), Dt2(->vmstate), ~LJ_VMST_CFUNC, GG_G2DISP, CFRAME_RAWMASK);
-#line 568 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 568 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|->vm_unwind_ff_eh:			// Landing pad for external unwinder.
   //|  mov L:RB, SAVE_L
   //|  mov RDd, 1+1			// Really 1+2 results, incr. later.
@@ -1906,7 +1906,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|  // BASE = new base, RD = nargs+1, RB = L, PC = first PC
   //|  lea RD, [BASE+NARGS:RD*8-8]
   dasm_put(Dst, 377, 1+1, Dt1(->base), Dt1(->glref), GG_G2DISP, (unsigned int)((int64_t)~((uint64_t)1<<47)), (unsigned int)(((int64_t)~((uint64_t)1<<47))>>32), DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, LUA_MINSTACK);
-#line 599 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 599 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|1:
   //|  movzx RAd, byte [PC-4+PC2PROTO(framesize)]
   //|  add PC, 4				// Must point after first instruction.
@@ -1957,7 +1957,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|  // INTERP until jump to BC_RET* or vm_return.
   //|  set_vmstate INTERP
   dasm_put(Dst, 465, -4+PC2PROTO(framesize), Dt1(->base), Dt1(->top), Dt1(->base), Dt1(->top), Dt7(->pc), FRAME_CP, CFRAME_RESUME, Dt1(->glref), GG_G2DISP, DISPATCH_GL(vmstate), Dt1(->cframe), Dt1(->status), DISPATCH_GL(cur_L));
-#line 648 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 648 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  mov byte L:RB->status, RDL
   //|  mov BASE, L:RB->base
   //|  mov RD, L:RB->top
@@ -1993,7 +1993,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|  mov KBASE, L:RB->cframe		// Add our C frame to cframe chain.
   //|  mov SAVE_CFRAME, KBASE
   dasm_put(Dst, 648, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, Dt1(->status), Dt1(->base), Dt1(->top), FRAME_TYPE, FRAME_CP, FRAME_C, Dt1(->glref), Dt1(->cframe));
-#line 682 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 682 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  mov SAVE_PC, L:RB			// Any value outside of bytecode is ok.
   //|  add DISPATCH, GG_G2DISP
   //|  save_vmstate			// Caveat: uses TMPRd (r10d).
@@ -2032,7 +2032,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|   mov DISPATCH, L:RB->glref		// Setup pointer to dispatch table.
   //|  mov SAVE_ERRF, 0			// No error function.
   dasm_put(Dst, 762, GG_G2DISP, DISPATCH_GL(vmstate), Dt1(->cframe), DISPATCH_GL(cur_L), DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, Dt1(->base), Dt1(->top), LJ_TFUNC, Dt7(->pc), Dt1(->stack), Dt1(->top), Dt1(->glref));
-#line 719 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 719 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  mov SAVE_NRES, KBASEd		// Neg. delta means cframe w/o frame.
   //|   add DISPATCH, GG_G2DISP
   //|  save_vmstate			// Caveat: uses TMPRd (r10d).
@@ -2077,7 +2077,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|  mov KBASE, [KBASE+PC2PROTO(k)]
   //|  set_vmstate_sync_base LFUNC	// LFUNC after KBASE restoration.
   dasm_put(Dst, 930, GG_G2DISP, DISPATCH_GL(vmstate), Dt1(->cframe), Dt1(->cframe), DISPATCH_GL(cur_L), FRAME_CP, LJ_TNIL, Dt7(->pc), PC2PROTO(k), DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, DISPATCH_GL(top_frame_info.top_frame));
-#line 762 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 762 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  // BASE = base, RC = result, RB = meta base
   //|  jmp RA				// Jump to continuation.
   //|
@@ -2126,7 +2126,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|  jne >1
   //|  settp TAB:RA, TAB:RB, LJ_TTAB	// TAB:RB = GCtab *
   dasm_put(Dst, 1067, DISPATCH_GL(vmstate), ~LJ_VMST_LFUNC, Dt1(->base), (unsigned int)(((uint64_t)LJ_TSTR<<47)), (unsigned int)((((uint64_t)LJ_TSTR<<47))>>32), BC_GGET, (unsigned int)(((uint64_t)LJ_TTAB<<47)), (unsigned int)((((uint64_t)LJ_TTAB<<47))>>32));
-#line 809 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 809 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  lea RB, [DISPATCH+DISPATCH_GL(tmptv)]  // Store fn->l.env in g->tmptv.
   //|  mov [RB], TAB:RA
   //|  jmp >2
@@ -2181,7 +2181,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|->vmeta_tgetr:
   //|  mov CARG1, TAB:RB
   dasm_put(Dst, 1185, DISPATCH_GL(tmptv), Dt1(->base), Dt1(->base), Dt1(->top), FRAME_CONT, 2+1);
-#line 862 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 862 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  mov RB, BASE			// Save BASE.
   //|  mov CARG2d, RCd			// Caveat: CARG2 == BASE
   //|  call extern lj_tab_getinth		// (GCtab *t, int32_t key)
@@ -2221,7 +2221,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|->vmeta_tsetv:
   //|  movzx RCd, PC_RC			// Reload TValue *k from RC.
   dasm_put(Dst, 1367, LJ_TNIL, (unsigned int)(((uint64_t)LJ_TSTR<<47)), (unsigned int)((((uint64_t)LJ_TSTR<<47))>>32), BC_GSET, (unsigned int)(((uint64_t)LJ_TTAB<<47)), (unsigned int)((((uint64_t)LJ_TTAB<<47))>>32), DISPATCH_GL(tmptv));
-#line 900 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 900 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  lea RC, [BASE+RC*8]
   //|1:
   //|  movzx RBd, PC_RB			// Reload TValue *t from RB.
@@ -2293,7 +2293,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|.else
   //|  lea CARG2, [BASE+RA*8]
   dasm_put(Dst, 1479, Dt1(->base), Dt1(->base), Dt1(->top), FRAME_CONT, 3+1, Dt1(->base), Dt1(->base));
-#line 970 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 970 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  lea CARG3, [BASE+RD*8]
   //|.endif
   //|  mov CARG1, L:RB			// Caveat: CARG1/CARG4 == RA.
@@ -2331,7 +2331,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|->vmeta_equal:
   //|  cleartp TAB:RD
   dasm_put(Dst, 1691, Dt1(->base), -BCBIAS_J*4, LJ_TISTRUECOND, LJ_TISTRUECOND);
-#line 1006 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1006 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  sub PC, 4
   //|.if X64WIN
   //|  mov CARG3, RD
@@ -2402,7 +2402,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|->vmeta_unm:
   //|  lea RC, [BASE+RD*8]
   dasm_put(Dst, 1827, Dt1(->base), Dt1(->base), Dt1(->base), Dt1(->base));
-#line 1075 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1075 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  mov RB, RC
   //|  jmp >2
   //|
@@ -2463,7 +2463,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|  // NULL (retry) or TValue * (metamethod) returned in eax (RC).
   //|  mov BASE, L:RB->base
   dasm_put(Dst, 1983, Dt1(->base), Dt1(->base), FRAME_CONT, 2+1, Dt1(->base), Dt1(->base));
-#line 1134 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1134 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 #if LJ_52
   //|  test RC, RC
   //|  jne ->vmeta_binop			// Binop call for compatibility.
@@ -2472,11 +2472,11 @@ static void build_subroutines(BuildCtx *ctx)
   //|  cleartp TAB:CARG1
   //|  jmp ->BC_LEN_Z
   dasm_put(Dst, 2124);
-#line 1141 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1141 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 #else
   //|  jmp ->vmeta_binop			// Binop call for compatibility.
   dasm_put(Dst, 2154);
-#line 1143 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1143 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 #endif
   //|
   //|//-- Call metamethod ----------------------------------------------------
@@ -2580,7 +2580,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|
   //|.ffunc_1 assert
   dasm_put(Dst, 2159, Dt1(->base), Dt1(->base), Dt7(->pc), Dt1(->base), Dt1(->base), GG_DISP2STATIC, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC);
-#line 1245 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1245 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  mov ITYPE, [BASE]
   //|  mov RB, ITYPE
   //|  sar ITYPE, 47
@@ -2604,7 +2604,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|
   //|.ffunc_1 type
   dasm_put(Dst, 2360, 1+1, LJ_TISTRUECOND, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid));
-#line 1267 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1267 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  mov RC, [BASE]
   //|  sar RC, 47
   //|  mov RBd, LJ_TISNUM
@@ -2624,7 +2624,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|
   //|.ffunc_1 getmetatable
   dasm_put(Dst, 2469, DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 1+1, LJ_TISNUM, ((char *)(&((GCfuncC *)0)->upvalue)), (unsigned int)(((uint64_t)LJ_TSTR<<47)), (unsigned int)((((uint64_t)LJ_TSTR<<47))>>32), DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid));
-#line 1285 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1285 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  mov TAB:RB, [BASE]
   //|  mov PC, [BASE-8]
   //|  checktab TAB:RB, >6
@@ -2641,7 +2641,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|  and RAd, STR:RC->hash
   //|  settp STR:RC, LJ_TSTR
   dasm_put(Dst, 2576, DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 1+1, LJ_TTAB, Dt6(->metatable), LJ_TNIL, (unsigned int)(((uint64_t)LJ_TTAB<<47)), (unsigned int)((((uint64_t)LJ_TTAB<<47))>>32), DISPATCH_GL(gcroot)+8*(GCROOT_MMNAME+MM_metatable), Dt6(->hmask), Dt5(->hash), (unsigned int)(((uint64_t)LJ_TSTR<<47)), (unsigned int)((((uint64_t)LJ_TSTR<<47))>>32));
-#line 1300 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1300 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  imul RAd, #NODE
   //|  add NODE:RA, TAB:RB->node
   //|3:  // Rearranged logic, because we expect _not_ to find the key.
@@ -2661,7 +2661,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|6:
   //|  cmp ITYPEd, LJ_TUDATA; je <1
   dasm_put(Dst, 2673, sizeof(Node), Dt6(->node), DtB(->key), DtB(->next), DtB(->val), LJ_TNIL);
-#line 1318 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1318 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  cmp ITYPEd, LJ_TISNUM; ja >7
   //|  mov ITYPEd, LJ_TISNUM
   //|7:
@@ -2671,7 +2671,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|
   //|.ffunc_2 setmetatable
   dasm_put(Dst, 2737, LJ_TUDATA, LJ_TISNUM, LJ_TISNUM, DISPATCH_GL(gcroot[GCROOT_BASEMT]), DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC);
-#line 1326 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1326 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  mov TAB:RB, [BASE]
   //|  mov TAB:TMPR, TAB:RB
   //|  checktab TAB:RB, ->fff_fallback
@@ -2687,7 +2687,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|  // Possible write barrier. Table is black, but skip iswhite(mt) check.
   //|  barrierback TAB:RB, RC
   dasm_put(Dst, 2808, 2+1, LJ_TTAB, Dt6(->metatable), LJ_TTAB, Dt6(->metatable), Dt6(->marked), LJ_GC_BLACK, Dt6(->marked), (uint8_t)~LJ_GC_BLACK);
-#line 1340 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1340 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|1:
   //|  jmp ->fff_res1
   //|
@@ -2704,7 +2704,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|  checktab TAB:CARG2, ->fff_fallback
   //|  mov RB, BASE			// Save BASE.
   dasm_put(Dst, 2917, DISPATCH_GL(gc.grayagain), DISPATCH_GL(gc.grayagain), Dt6(->gclist), DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 2+1, LJ_TTAB);
-#line 1355 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1355 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  lea CARG3, [BASE+8]		// Caveat: CARG3 == BASE.
   //|  mov CARG1, SAVE_L
   //|.endif
@@ -2730,7 +2730,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|
   //|.ffunc_1 tostring
   dasm_put(Dst, 3007, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 1+1, LJ_TISNUM);
-#line 1379 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1379 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  // Only handles the string or number case inline.
   //|  mov PC, [BASE-8]
   //|  mov STR:RB, [BASE]
@@ -2743,7 +2743,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|  cmp ITYPEd, LJ_TISNUM;  ja ->fff_fallback_1
   //|  cmp aword [DISPATCH+DISPATCH_GL(gcroot[GCROOT_BASEMT_NUM])], 0
   dasm_put(Dst, 3123, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 1+1, LJ_TSTR, LJ_TISNUM);
-#line 1390 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1390 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  jne ->fff_fallback
   //|  ffgccheck				// Caveat: uses label 1.
   //|  mov L:RB, SAVE_L
@@ -2767,7 +2767,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|
   //|.ffunc_1 next
   dasm_put(Dst, 3211, DISPATCH_GL(gcroot[GCROOT_BASEMT_NUM]), DISPATCH_GL(gc.total), DISPATCH_GL(gc.threshold), Dt1(->base), Dt1(->base), (unsigned int)(((uint64_t)LJ_TSTR<<47)), (unsigned int)((((uint64_t)LJ_TSTR<<47))>>32), DISPATCH_GL(vmstate), ~LJ_VMST_INTERP);
-#line 1412 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1412 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  je >2				// Missing 2nd arg?
   //|1:
   //|.if X64WIN
@@ -2797,7 +2797,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|  // Copy key and value to results.
   //|  mov RB, [BASE+8]
   dasm_put(Dst, 3285, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 1+1, LJ_TTAB, Dt1(->base), Dt1(->top), Dt1(->base));
-#line 1440 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1440 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  mov RD, [BASE+16]
   //|  mov [BASE-16], RB
   //|  mov [BASE-8], RD
@@ -2813,16 +2813,16 @@ static void build_subroutines(BuildCtx *ctx)
   //|
   //|.ffunc_1 pairs
   dasm_put(Dst, 3401, 1+2, LJ_TNIL, LJ_TNIL, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC);
-#line 1454 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1454 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  mov TAB:RB, [BASE]
   //|  mov TMPR, TAB:RB
   //|  checktab TAB:RB, ->fff_fallback
   dasm_put(Dst, 3484, 1+1, LJ_TTAB);
-#line 1457 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1457 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 #if LJ_52
   //|  cmp aword TAB:RB->metatable, 0; jne ->fff_fallback
   dasm_put(Dst, 3527, Dt6(->metatable));
-#line 1459 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1459 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 #endif
   //|  mov CFUNC:RD, [BASE-16]
   //|  cleartp CFUNC:RD
@@ -2839,7 +2839,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|  mov TAB:RB, [BASE]
   //|  checktab TAB:RB, ->fff_fallback
   dasm_put(Dst, 3537, Dt8(->upvalue[0]), (unsigned int)(((uint64_t)LJ_TFUNC<<47)), (unsigned int)((((uint64_t)LJ_TFUNC<<47))>>32), LJ_TNIL, 1+3, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 2+1, LJ_TTAB);
-#line 1474 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1474 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|.if DUALNUM
   //|  mov RA, [BASE+8]
   //|  checkint RA, ->fff_fallback
@@ -2870,7 +2870,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|2:  // Check for empty hash part first. Otherwise call C function.
   //|  cmp dword TAB:RB->hmask, 0; je ->fff_res0
   dasm_put(Dst, 3654, LJ_TISNUM, (unsigned int)(U64x(3ff00000,00000000)), (unsigned int)((U64x(3ff00000,00000000))>>32), Dt6(->asize), Dt6(->array), LJ_TNIL, Dt6(->hmask));
-#line 1503 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1503 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|.if X64WIN
   //|  mov TMPR, BASE
   //|  mov CARG2d, RAd
@@ -2893,15 +2893,15 @@ static void build_subroutines(BuildCtx *ctx)
   //|.ffunc_1 ipairs
   //|  mov TAB:RB, [BASE]
   dasm_put(Dst, 3757, 1+0, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 1+1);
-#line 1524 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1524 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  mov TMPR, TAB:RB
   //|  checktab TAB:RB, ->fff_fallback
   dasm_put(Dst, 3492, LJ_TTAB);
-#line 1526 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1526 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 #if LJ_52
   //|  cmp aword TAB:RB->metatable, 0; jne ->fff_fallback
   dasm_put(Dst, 3527, Dt6(->metatable));
-#line 1528 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1528 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 #endif
   //|  mov CFUNC:RD, [BASE-16]
   //|  cleartp CFUNC:RD
@@ -2928,7 +2928,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|1:
   //|  movzx RBd, byte [DISPATCH+DISPATCH_GL(hookmask)]
   dasm_put(Dst, 3835, Dt8(->upvalue[0]), (unsigned int)(((uint64_t)LJ_TFUNC<<47)), (unsigned int)((((uint64_t)LJ_TFUNC<<47))>>32), 1+3, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 1+1, 16+FRAME_PCALL);
-#line 1553 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1553 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  shr RB, HOOK_ACTIVE_SHIFT
   //|  and RB, 1
   //|  add PC, RB				// Remember active hook before pcall.
@@ -2945,7 +2945,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|  mov LFUNC:RA, [BASE+8]
   //|  checktp_nc LFUNC:RA, LJ_TFUNC, ->fff_fallback
   dasm_put(Dst, 3940, DISPATCH_GL(hookmask), HOOK_ACTIVE_SHIFT, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 2+1, LJ_TFUNC);
-#line 1568 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1568 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  mov LFUNC:RB, [BASE]		// Swap function and traceback.
   //|  mov [BASE], LFUNC:RA
   //|  mov [BASE+8], LFUNC:RB
@@ -3102,13 +3102,13 @@ static void build_subroutines(BuildCtx *ctx)
   dasm_put(Dst, 4160, Dt1(->cframe), Dt1(->status), LUA_YIELD, Dt1(->top), Dt1(->base), Dt1(->maxstack), Dt1(->top), Dt1(->base));
   dasm_put(Dst, 4235, Dt1(->top), Dt1(->base), DISPATCH_GL(cur_L), DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, LUA_YIELD, Dt1(->base), Dt1(->top));
   dasm_put(Dst, 4334, Dt1(->top), Dt1(->maxstack), (unsigned int)((int64_t)~((uint64_t)2<<47)), (unsigned int)(((int64_t)~((uint64_t)2<<47))>>32), FRAME_TYPE, (unsigned int)((int64_t)~((uint64_t)1<<47)), (unsigned int)(((int64_t)~((uint64_t)1<<47))>>32));
-#line 1720 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1720 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  coroutine_resume_wrap 0		// coroutine.wrap
   dasm_put(Dst, 4446, Dt1(->top), Dt1(->top), 1+2, Dt1(->top), Dt1(->base), DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, Dt8(->upvalue[0].gcr));
   dasm_put(Dst, 4561, Dt1(->cframe), Dt1(->status), LUA_YIELD, Dt1(->top), Dt1(->base), Dt1(->maxstack), Dt1(->top), Dt1(->base));
   dasm_put(Dst, 4659, Dt1(->top), Dt1(->base), DISPATCH_GL(cur_L), DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, LUA_YIELD, Dt1(->base), Dt1(->top));
   dasm_put(Dst, 4755, Dt1(->top), Dt1(->maxstack), FRAME_TYPE, Dt1(->top));
-#line 1721 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1721 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|
   //|.ffunc coroutine_yield
   //|  mov L:RB, SAVE_L
@@ -3122,7 +3122,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|  mov al, LUA_YIELD
   //|  mov byte L:RB->status, al
   dasm_put(Dst, 4866, Dt1(->base), DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, Dt1(->cframe), CFRAME_RESUME, Dt1(->base), Dt1(->top), Dt1(->cframe), LUA_YIELD);
-#line 1733 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1733 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  jmp ->vm_leave_unw
   //|
   //|//-- Math library -------------------------------------------------------
@@ -3156,7 +3156,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|
   //|.ffunc_n math_sqrt, sqrtsd
   dasm_put(Dst, 4960, Dt1(->status), DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 1+1, LJ_TISNUM);
-#line 1765 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1765 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|->fff_resxmm0:
   //|  mov PC, [BASE-8]
   //|  movsd qword [BASE-16], xmm0
@@ -3170,7 +3170,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|  test PCd, FRAME_TYPE
   //|  jnz >7
   dasm_put(Dst, 5053, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 1+1, LJ_TISNUM, 1+1, FRAME_TYPE);
-#line 1777 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1777 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|5:
   //|  cmp PC_RB, RDL			// More results expected?
   //|  ja >6
@@ -3215,16 +3215,16 @@ static void build_subroutines(BuildCtx *ctx)
   //|
   //|  math_round floor
   dasm_put(Dst, 5144, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, DISPATCH_GL(top_frame_info.top_frame), DISPATCH_GL(vmstate), ~LJ_VMST_LFUNC, LJ_TNIL, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP);
-#line 1820 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1820 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  math_round ceil
   dasm_put(Dst, 5249, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, LJ_TISNUM, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC);
-#line 1821 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1821 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|
   //|.ffunc math_log
   //|  cmp NARGS:RDd, 1+1; jne ->fff_fallback	// Exactly one argument.
   //|  checknumtp [BASE], ->fff_fallback
   dasm_put(Dst, 5338, LJ_TISNUM, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 1+1, LJ_TISNUM);
-#line 1825 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1825 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  movsd xmm0, qword [BASE]
   //|  mov RB, BASE
   //|  call extern log
@@ -3250,47 +3250,47 @@ static void build_subroutines(BuildCtx *ctx)
   //|  math_extern log10
   //|  math_extern exp
   dasm_put(Dst, 5422, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 1+1, LJ_TISNUM);
-#line 1849 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1849 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  math_extern sin
   dasm_put(Dst, 5527, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 1+1, LJ_TISNUM, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16);
-#line 1850 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1850 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  math_extern cos
   dasm_put(Dst, 5615, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 1+1, LJ_TISNUM, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC);
-#line 1851 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1851 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  math_extern tan
   dasm_put(Dst, 5716, 1+1, LJ_TISNUM, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 1+1);
-#line 1852 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1852 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  math_extern asin
   dasm_put(Dst, 5803, LJ_TISNUM, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 1+1, LJ_TISNUM);
-#line 1853 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1853 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  math_extern acos
   //|  math_extern atan
   dasm_put(Dst, 5899, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 1+1, LJ_TISNUM);
-#line 1855 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1855 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  math_extern sinh
   dasm_put(Dst, 6000, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 1+1, LJ_TISNUM, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16);
-#line 1856 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1856 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  math_extern cosh
   dasm_put(Dst, 6088, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 1+1, LJ_TISNUM, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC);
-#line 1857 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1857 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  math_extern tanh
   dasm_put(Dst, 6189, 1+1, LJ_TISNUM, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 1+1);
-#line 1858 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1858 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  math_extern2 pow
   dasm_put(Dst, 6276, LJ_TISNUM, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 2+1, LJ_TISNUM);
-#line 1859 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1859 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  math_extern2 atan2
   dasm_put(Dst, 6372, LJ_TISNUM, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 2+1, LJ_TISNUM);
-#line 1860 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1860 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  math_extern2 fmod
   dasm_put(Dst, 6475, LJ_TISNUM, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 2+1, LJ_TISNUM);
-#line 1861 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1861 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|
   //|.ffunc_2 math_ldexp
   //|  checknumtp [BASE], ->fff_fallback
   //|  checknumtp [BASE+8], ->fff_fallback
   dasm_put(Dst, 6578, LJ_TISNUM, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 2+1, LJ_TISNUM);
-#line 1865 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1865 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  fld qword [BASE+8]
   //|  fld qword [BASE]
   //|  fscale
@@ -3301,7 +3301,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|
   //|.ffunc_n math_frexp
   dasm_put(Dst, 6681, LJ_TISNUM, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 1+1, LJ_TISNUM);
-#line 1874 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1874 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  mov RB, BASE
   //|.if X64WIN
   //|  lea CARG2, TMP1		// Caveat: CARG2 == BASE
@@ -3385,10 +3385,10 @@ static void build_subroutines(BuildCtx *ctx)
   //|  math_minmax math_min, cmovg, minsd
   dasm_put(Dst, 6781, 1+2, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 1+1, LJ_TISNUM, 1+2);
   dasm_put(Dst, 6934, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 1+1, LJ_TISNUM, LJ_TISNUM);
-#line 1955 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1955 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  math_minmax math_max, cmovl, maxsd
   dasm_put(Dst, 7031, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 1+1, LJ_TISNUM);
-#line 1956 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1956 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|
   //|//-- String library -----------------------------------------------------
   //|
@@ -3397,7 +3397,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|  mov STR:RB, [BASE]
   //|  checkstr STR:RB, ->fff_fallback
   dasm_put(Dst, 7130, LJ_TISNUM, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 1+1, LJ_TSTR);
-#line 1963 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1963 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  mov PC, [BASE-8]
   //|  cmp dword STR:RB->len, 1
   //|  jb ->fff_res0			// Return no results for empty string.
@@ -3411,7 +3411,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|.ffunc string_char			// Only handle the 1-arg case here.
   //|  ffgccheck
   dasm_put(Dst, 7242, Dt5(->len), Dt5([1]), DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, DISPATCH_GL(gc.total), DISPATCH_GL(gc.threshold));
-#line 1975 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 1975 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  cmp NARGS:RDd, 1+1;  jne ->fff_fallback	// *Exactly* 1 arg.
   //|.if DUALNUM
   //|  mov RB, [BASE]
@@ -3442,7 +3442,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|
   //|.ffunc string_sub
   dasm_put(Dst, 7318, 1+1, LJ_TISNUM, Dt1(->base), Dt1(->base), (unsigned int)(((uint64_t)LJ_TSTR<<47)), (unsigned int)((((uint64_t)LJ_TSTR<<47))>>32));
-#line 2004 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2004 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  ffgccheck
   //|  mov TMPRd, -1
   //|  cmp NARGS:RDd, 1+2;  jb ->fff_fallback
@@ -3453,7 +3453,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|.else
   //|  checknumtp [BASE+16], ->fff_fallback
   dasm_put(Dst, 7438, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, DISPATCH_GL(gc.total), DISPATCH_GL(gc.threshold), 1+2);
-#line 2013 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2013 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  cvttsd2si TMPRd, qword [BASE+16]
   //|.endif
   //|1:
@@ -3480,7 +3480,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|  jl ->fff_emptystr
   //|  lea RD, [STR:RB+RAd+#STR-1]
   dasm_put(Dst, 7509, LJ_TISNUM, LJ_TSTR, LJ_TISNUM, Dt5(->len));
-#line 2038 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2038 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  add TMPRd, 1
   //|4:
   //|  jmp ->fff_newstr
@@ -3505,7 +3505,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|->fff_emptystr:  // Range underflow.
   //|  xor TMPRd, TMPRd			// Zero length. Any ptr in RD is ok.
   dasm_put(Dst, 7618, sizeof(GCstr)-1);
-#line 2061 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2061 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  jmp <4
   //|
   //|.macro ffstring_op, name
@@ -3536,14 +3536,14 @@ static void build_subroutines(BuildCtx *ctx)
   //|
   //|ffstring_op reverse
   dasm_put(Dst, 7687, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 1+1, DISPATCH_GL(gc.total), DISPATCH_GL(gc.threshold));
-#line 2090 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2090 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|ffstring_op lower
   dasm_put(Dst, 7753, LJ_TSTR, DISPATCH_GL(tmpbuf), Dt1(->base), DtE(->b), DtE(->L), DtE(->p), DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 1+1);
-#line 2091 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2091 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|ffstring_op upper
   dasm_put(Dst, 7866, DISPATCH_GL(gc.total), DISPATCH_GL(gc.threshold), LJ_TSTR, DISPATCH_GL(tmpbuf), Dt1(->base), DtE(->b), DtE(->L), DtE(->p));
   dasm_put(Dst, 7965, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 1+1, DISPATCH_GL(gc.total), DISPATCH_GL(gc.threshold), LJ_TSTR);
-#line 2092 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2092 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|
   //|//-- Bit library --------------------------------------------------------
   //|
@@ -3581,7 +3581,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|
   //|.ffunc_bit bit_tobit, 0
   dasm_put(Dst, 8052, DISPATCH_GL(tmpbuf), Dt1(->base), DtE(->b), DtE(->L), DtE(->p), DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 1+1, LJ_TISNUM);
-#line 2128 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2128 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  jmp ->fff_resbit
   //|
   //|.macro .ffunc_bit_op, name, ins
@@ -3613,25 +3613,25 @@ static void build_subroutines(BuildCtx *ctx)
   //|
   //|.ffunc_bit_op bit_band, and
   dasm_put(Dst, 8152, (unsigned int)(U64x(43380000,00000000)), (unsigned int)((U64x(43380000,00000000))>>32), DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 1+1, (unsigned int)(U64x(43380000,00000000)), (unsigned int)((U64x(43380000,00000000))>>32));
-#line 2158 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2158 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|.ffunc_bit_op bit_bor, or
   dasm_put(Dst, 8231, LJ_TISNUM, LJ_TISNUM, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC);
-#line 2159 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2159 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|.ffunc_bit_op bit_bxor, xor
   dasm_put(Dst, 8362, 1+1, (unsigned int)(U64x(43380000,00000000)), (unsigned int)((U64x(43380000,00000000))>>32), LJ_TISNUM, LJ_TISNUM, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP);
   dasm_put(Dst, 8479, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 1+1, (unsigned int)(U64x(43380000,00000000)), (unsigned int)((U64x(43380000,00000000))>>32), LJ_TISNUM, LJ_TISNUM);
-#line 2160 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2160 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|
   //|.ffunc_bit bit_bswap, 1
   //|  bswap RBd
   dasm_put(Dst, 8591, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 1+1, LJ_TISNUM, (unsigned int)(U64x(43380000,00000000)), (unsigned int)((U64x(43380000,00000000))>>32));
-#line 2163 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2163 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  jmp ->fff_resbit
   //|
   //|.ffunc_bit bit_bnot, 1
   //|  not RBd
   dasm_put(Dst, 8699, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 1+1, LJ_TISNUM, (unsigned int)(U64x(43380000,00000000)), (unsigned int)((U64x(43380000,00000000))>>32));
-#line 2167 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2167 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|.if DUALNUM
   //|  jmp ->fff_resbit
   //|.else
@@ -3664,19 +3664,19 @@ static void build_subroutines(BuildCtx *ctx)
   //|
   //|.ffunc_bit_sh bit_lshift, shl
   dasm_put(Dst, 8789, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 2+1, LJ_TISNUM);
-#line 2198 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2198 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|.ffunc_bit_sh bit_rshift, shr
   dasm_put(Dst, 8871, LJ_TISNUM, (unsigned int)(U64x(43380000,00000000)), (unsigned int)((U64x(43380000,00000000))>>32), DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 2+1, LJ_TISNUM);
-#line 2199 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2199 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|.ffunc_bit_sh bit_arshift, sar
   dasm_put(Dst, 8988, LJ_TISNUM, (unsigned int)(U64x(43380000,00000000)), (unsigned int)((U64x(43380000,00000000))>>32), DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 2+1);
-#line 2200 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2200 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|.ffunc_bit_sh bit_rol, rol
   dasm_put(Dst, 9097, LJ_TISNUM, LJ_TISNUM, (unsigned int)(U64x(43380000,00000000)), (unsigned int)((U64x(43380000,00000000))>>32), DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC, 2+1);
-#line 2201 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2201 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|.ffunc_bit_sh bit_ror, ror
   dasm_put(Dst, 9215, LJ_TISNUM, LJ_TISNUM, (unsigned int)(U64x(43380000,00000000)), (unsigned int)((U64x(43380000,00000000))>>32), DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, - 16, Dt7(->ffid), DISPATCH_GL(top_frame_info.ffid), DISPATCH_GL(vmstate), ~LJ_VMST_FFUNC);
-#line 2202 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2202 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|
   //|//-----------------------------------------------------------------------
   //|
@@ -3689,7 +3689,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|  // BASE = new base, RD = nargs+1
   //|  mov L:RB, SAVE_L
   dasm_put(Dst, 9332, 2+1, LJ_TISNUM, LJ_TISNUM, (unsigned int)(U64x(43380000,00000000)), (unsigned int)((U64x(43380000,00000000))>>32), 1+2, 1+1);
-#line 2213 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2213 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  mov PC, [BASE-8]			// Fallback may overwrite PC.
   //|  mov SAVE_PC, PC			// Redundant (but a defined value).
   //|  mov L:RB->base, BASE
@@ -3723,7 +3723,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|  jnz >3
   //|  movzx RBd, PC_RA
   dasm_put(Dst, 9434, Dt1(->base), 8*LUA_MINSTACK, Dt1(->top), Dt1(->maxstack), Dt8(->f), Dt1(->base), Dt1(->top), Dt7(->pc), FRAME_TYPE);
-#line 2245 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2245 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  neg RB
   //|  lea BASE, [BASE+RB*8-16]		// base = base - (RB+2)*8
   //|  jmp ->vm_call_dispatch		// Resolve again for tailcall.
@@ -3773,7 +3773,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|  // Decrement the hookcount for consistency, but always do the call.
   //|  test RDL, HOOK_ACTIVE
   dasm_put(Dst, 9579, LUA_MINSTACK, Dt1(->base), Dt1(->base), Dt1(->top), Dt1(->base), Dt1(->top), DISPATCH_GL(hookmask), HOOK_VMEVENT);
-#line 2293 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2293 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  jnz >1
   //|  test RDL, LUA_MASKLINE|LUA_MASKCOUNT
   //|  jz >1
@@ -3792,7 +3792,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|  test RDL, HOOK_ACTIVE		// Hook already active?
   //|  jnz >5
   dasm_put(Dst, 9715, HOOK_ACTIVE, LUA_MASKLINE|LUA_MASKCOUNT, DISPATCH_GL(hookcount), DISPATCH_GL(hookmask), HOOK_ACTIVE, DISPATCH_GL(hookmask), HOOK_ACTIVE);
-#line 2310 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2310 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|
   //|  test RDL, LUA_MASKLINE|LUA_MASKCOUNT
   //|  jz >5
@@ -3819,7 +3819,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|->cont_hook:				// Continue from hook yield.
   //|  add PC, 4
   dasm_put(Dst, 9763, LUA_MASKLINE|LUA_MASKCOUNT, DISPATCH_GL(hookcount), LUA_MASKLINE, Dt1(->base), Dt1(->base), GG_DISP2STATIC);
-#line 2335 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2335 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  mov RA, [RB-40]
   //|  mov MULTRES, RAd			// Restore MULTRES for *M ins.
   //|  jmp <4
@@ -3869,7 +3869,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|  mov BASE, L:RB->base
   //|  mov RA, RD
   dasm_put(Dst, 9846, Dt7(->pc), PC2PROTO(framesize), Dt1(->base), Dt1(->top), GG_DISP2J, DISPATCH_J(L), Dt1(->base), Dt1(->top), Dt1(->base));
-#line 2383 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2383 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  mov RD, L:RB->top
   //|  sub RD, BASE
   //|  mov RB, RA
@@ -3916,7 +3916,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|  // Stitch a new trace to the previous trace.
   //|  mov [DISPATCH+DISPATCH_J(exitno)], RB
   dasm_put(Dst, 9999, Dt1(->top), DtD(->traceno), DtD(->link), BC_JLOOP);
-#line 2428 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2428 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  mov L:RB, SAVE_L
   //|  mov L:RB->base, BASE
   //|  mov CARG2, PC
@@ -3934,7 +3934,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|
   //|->vm_profhook:			// Dispatch target for profiler hook.
   dasm_put(Dst, 10147, DISPATCH_J(exitno), Dt1(->base), GG_DISP2J, DISPATCH_J(L), Dt1(->base), LJ_TNIL);
-#line 2444 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2444 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 #if LJ_HASPROFILE
   //|  mov L:RB, SAVE_L
   //|  mov L:RB->base, BASE
@@ -3946,7 +3946,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|  sub PC, 4
   //|  jmp ->cont_nop
   dasm_put(Dst, 10200, Dt1(->base), Dt1(->base));
-#line 2454 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2454 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 #endif
   //|
   //|//-----------------------------------------------------------------------
@@ -4029,7 +4029,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|.else
   //|  lea RA, [rsp+16]
   dasm_put(Dst, 10234, DISPATCH_GL(vmstate), DISPATCH_GL(vmstate), ~LJ_VMST_EXIT, DISPATCH_J(exitno), DISPATCH_J(parent), 16*8, DISPATCH_GL(cur_L), DISPATCH_GL(jit_base), DISPATCH_J(L), Dt1(->base), GG_DISP2J, DISPATCH_GL(jit_base), Dt1(->cframe), CFRAME_RAWMASK, CFRAME_OFS_L, Dt1(->base), CFRAME_OFS_PC);
-#line 2535 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2535 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|1:
   //|  mov r13, [RA-8]
   //|  mov r12, [RA]
@@ -4058,7 +4058,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|2:
   //|  mov RCd, MULTRES			// RC/RD holds nres+1.
   dasm_put(Dst, 10474, Dt7(->pc), PC2PROTO(k), Dt1(->base), DISPATCH_GL(jit_base), DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, DISPATCH_GL(top_frame_info.top_frame), DISPATCH_GL(vmstate), ~LJ_VMST_LFUNC, BC_FUNCF, BC_FUNCC+2);
-#line 2562 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2562 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|3:
   //|  jmp aword [DISPATCH+OP*8]
   //|
@@ -4130,11 +4130,11 @@ static void build_subroutines(BuildCtx *ctx)
   //|
   //|  vm_round vm_floor, 0, 1
   dasm_put(Dst, 10588, FRAME_TYPE, Dt7(->pc), PC2PROTO(k), (unsigned int)(U64x(7fffffff,ffffffff)), (unsigned int)((U64x(7fffffff,ffffffff))>>32), (unsigned int)(U64x(43300000,00000000)), (unsigned int)((U64x(43300000,00000000))>>32), (unsigned int)(U64x(3ff00000,00000000)), (unsigned int)((U64x(3ff00000,00000000))>>32));
-#line 2632 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2632 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  vm_round vm_ceil,  1, JIT
   //|  vm_round vm_trunc, 2, JIT
   dasm_put(Dst, 10722, (unsigned int)(U64x(7fffffff,ffffffff)), (unsigned int)((U64x(7fffffff,ffffffff))>>32), (unsigned int)(U64x(43300000,00000000)), (unsigned int)((U64x(43300000,00000000))>>32), (unsigned int)(U64x(3ff00000,00000000)), (unsigned int)((U64x(3ff00000,00000000))>>32), (unsigned int)(U64x(7fffffff,ffffffff)), (unsigned int)((U64x(7fffffff,ffffffff))>>32), (unsigned int)(U64x(43300000,00000000)), (unsigned int)((U64x(43300000,00000000))>>32));
-#line 2634 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2634 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|
   //|// FP modulo x%y. Called by BC_MOD* and vm_arith.
   //|->vm_mod:
@@ -4191,11 +4191,11 @@ static void build_subroutines(BuildCtx *ctx)
   //|
   //|->assert_bad_for_arg_type:
   dasm_put(Dst, 10875, (unsigned int)(U64x(3ff00000,00000000)), (unsigned int)((U64x(3ff00000,00000000))>>32), (unsigned int)(U64x(7fffffff,ffffffff)), (unsigned int)((U64x(7fffffff,ffffffff))>>32), (unsigned int)(U64x(43300000,00000000)), (unsigned int)((U64x(43300000,00000000))>>32), (unsigned int)(U64x(3ff00000,00000000)), (unsigned int)((U64x(3ff00000,00000000))>>32));
-#line 2689 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2689 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 #ifdef LUA_USE_ASSERT
   //|  int3
   dasm_put(Dst, 11067);
-#line 2691 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2691 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 #endif
   //|  int3
   //|
@@ -4208,7 +4208,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|.if FFI
   //|.type CTSTATE, CTState, PC
 #define DtF(_V) (int)(ptrdiff_t)&(((CTState *)0)_V)
-#line 2702 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2702 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  saveregs_	// ebp/rbp already saved. ebp now holds global_State *.
   //|  lea DISPATCH, [ebp+GG_G2DISP]
   //|  mov CTSTATE, GL:ebp->ctype_state
@@ -4235,7 +4235,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|.endif
   //|  mov CTSTATE->cb.stack, rax
   dasm_put(Dst, 11069, GG_G2DISP, Dt2(->ctype_state), DtF(->cb.slot), DtF(->cb.gpr[0]), DtF(->cb.gpr[1]), DtF(->cb.gpr[2]), DtF(->cb.gpr[3]), DtF(->cb.fpr[0]), DtF(->cb.fpr[1]), DtF(->cb.fpr[2]), DtF(->cb.fpr[3]), CFRAME_SIZE, DtF(->cb.gpr[4]), DtF(->cb.gpr[5]), DtF(->cb.fpr[4]), DtF(->cb.fpr[5]), DtF(->cb.fpr[6]), DtF(->cb.fpr[7]));
-#line 2727 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2727 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  mov CARG2, rsp
   //|  mov SAVE_PC, CTSTATE		// Any value outside of bytecode is ok.
   //|  mov CARG1, CTSTATE
@@ -4272,10 +4272,10 @@ static void build_subroutines(BuildCtx *ctx)
   //|.if FFI
   //|  .type CCSTATE, CCallState, rbx
 #define Dt10(_V) (int)(ptrdiff_t)&(((CCallState *)0)_V)
-#line 2762 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2762 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  push rbp; mov rbp, rsp; push rbx; mov CCSTATE, CARG1
   dasm_put(Dst, 11175, DtF(->cb.stack), Dt1(->base), DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, DISPATCH_GL(top_frame_info.top_frame), DISPATCH_GL(vmstate), ~LJ_VMST_LFUNC, Dt1(->top), Dt7(->pc), DISPATCH_GL(ctype_state), DtF(->L), Dt1(->base), Dt1(->top), DtF(->cb.gpr[0]), DtF(->cb.fpr[0]));
-#line 2763 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2763 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|
   //|  // Readjust stack.
   //|  mov eax, CCSTATE->spadj
@@ -4304,7 +4304,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|  test eax, eax; jz >5
   //|  movaps xmm0, CCSTATE->fpr[0]
   dasm_put(Dst, 11314, Dt10(->spadj), Dt10(->nsp), offsetof(CCallState, stack), CCALL_SPS_EXTRA*8, Dt10(->nfpr), Dt10(->gpr[0]), Dt10(->gpr[1]), Dt10(->gpr[2]), Dt10(->gpr[3]), Dt10(->gpr[4]), Dt10(->gpr[5]));
-#line 2790 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2790 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   //|  movaps xmm1, CCSTATE->fpr[1]
   //|  movaps xmm2, CCSTATE->fpr[2]
   //|  movaps xmm3, CCSTATE->fpr[3]
@@ -4332,7 +4332,7 @@ static void build_subroutines(BuildCtx *ctx)
   //|
   //|//-----------------------------------------------------------------------
   dasm_put(Dst, 11400, Dt10(->fpr[0]), Dt10(->fpr[1]), Dt10(->fpr[2]), Dt10(->fpr[3]), Dt10(->fpr[4]), Dt10(->fpr[5]), Dt10(->fpr[6]), Dt10(->fpr[7]), Dt10(->func), Dt10(->gpr[0]), Dt10(->fpr[0]), Dt10(->gpr[1]), Dt10(->fpr[1]));
-#line 2816 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2816 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 }
 
 /* Generate the code for a single instruction. */
@@ -4342,7 +4342,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
   //|// Note: aligning all instructions does not pay off.
   //|=>defop:
   dasm_put(Dst, 3399, defop);
-#line 2824 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2824 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 
   switch (op) {
 
@@ -4437,14 +4437,14 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     break;
     default: break;  /* Shut up GCC. */
     }
-#line 2902 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2902 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     //|  movzx RDd, PC_RD
     //|  branchPC RD
     //|1:
     //|  ins_next
     //|.endif
     dasm_put(Dst, 11546, -BCBIAS_J*4);
-#line 2907 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2907 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
 
   case BC_ISEQV: case BC_ISNEV:
@@ -4462,7 +4462,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  cmp ITYPEd, LJ_TISNUM; jne >8
     //|  cmp RDd, RAd
     dasm_put(Dst, 11581);
-#line 2923 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2923 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     if (vk) {
       //|  jne >9
     } else {
@@ -4499,18 +4499,18 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  ucomisd xmm0, xmm1
     //|4:
     dasm_put(Dst, 11610, LJ_TISNUM, LJ_TISNUM);
-#line 2958 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2958 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   iseqne_fp:
     if (vk) {
       //|  jp >2				// Unordered means not equal.
       //|  jne >2
       dasm_put(Dst, 11648);
-#line 2962 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2962 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     } else {
       //|  jp >2				// Unordered means not equal.
       //|  je >1
       dasm_put(Dst, 11657);
-#line 2965 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2965 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     }
   iseqne_end:
     if (vk) {
@@ -4522,7 +4522,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
       //|3:
       //|.endif
       dasm_put(Dst, 11666, -BCBIAS_J*4);
-#line 2975 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2975 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     } else {
       //|.if not FFI
       //|3:
@@ -4532,17 +4532,17 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
       //|  branchPC RD
       //|1:				// EQ: Fallthrough to next instruction.
       dasm_put(Dst, 11682, -BCBIAS_J*4);
-#line 2983 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2983 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     }
     if (LJ_DUALNUM && (op == BC_ISEQV || op == BC_ISNEV ||
 		       op == BC_ISEQN || op == BC_ISNEN)) {
       //|  jmp <9
       dasm_put(Dst, 11698);
-#line 2987 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2987 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     } else {
       //|  ins_next
       dasm_put(Dst, 11559);
-#line 2989 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 2989 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     }
     //|
     if (op == BC_ISEQV || op == BC_ISNEV) {
@@ -4568,38 +4568,38 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
       //|  jnz <2				// Or 'no __eq' flag set?
       dasm_put(Dst, 11703, LJ_TCDATA, LJ_TCDATA, LJ_TISTABUD, Dt6(->metatable), Dt6(->nomm), 1<<MM_eq);
       dasm_put(Dst, 11771);
-#line 3012 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3012 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
       if (vk) {
 	//|  xor RBd, RBd			// ne = 0
 	dasm_put(Dst, 11776);
-#line 3014 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3014 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
       } else {
 	//|  mov RBd, 1			// ne = 1
 	dasm_put(Dst, 11780);
-#line 3016 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3016 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
       }
       //|  jmp ->vmeta_equal		// Handle __eq metamethod.
       dasm_put(Dst, 11786);
-#line 3018 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3018 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     } else {
       //|.if FFI
       //|3:
       //|  cmp ITYPEd, LJ_TCDATA
       dasm_put(Dst, 11791, LJ_TCDATA);
-#line 3022 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3022 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
       if (LJ_DUALNUM && vk) {
 	//|  jne <9
 	dasm_put(Dst, 11799);
-#line 3024 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3024 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
       } else {
 	//|  jne <2
 	dasm_put(Dst, 11771);
-#line 3026 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3026 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
       }
       //|  jmp ->vmeta_equal_cd
       //|.endif
       dasm_put(Dst, 11804);
-#line 3029 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3029 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     }
     break;
   case BC_ISEQS: case BC_ISNES:
@@ -4610,16 +4610,16 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  checkstr RB, >3
     //|  cmp RB, [KBASE+RD*8]
     dasm_put(Dst, 11809, LJ_TSTR);
-#line 3038 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3038 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   iseqne_test:
     if (vk) {
       //|  jne >2
       dasm_put(Dst, 11652);
-#line 3041 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3041 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     } else {
       //|  je >1
       dasm_put(Dst, 11661);
-#line 3043 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3043 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     }
     goto iseqne_end;
   case BC_ISEQN: case BC_ISNEN:
@@ -4633,7 +4633,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  checkint RD, >8
     //|  cmp RBd, RDd
     dasm_put(Dst, 11853);
-#line 3055 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3055 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     if (vk) {
       //|  jne >9
     } else {
@@ -4669,7 +4669,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  ucomisd xmm0, qword [BASE+RA*8]
     //|4:
     dasm_put(Dst, 11862, LJ_TISNUM);
-#line 3089 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3089 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     goto iseqne_fp;
   case BC_ISEQP: case BC_ISNEP:
     vk = op == BC_ISEQP;
@@ -4679,7 +4679,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  add PC, 4
     //|  cmp RBd, RDd
     dasm_put(Dst, 11899);
-#line 3097 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3097 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     if (!LJ_HASFFI) goto iseqne_test;
     if (vk) {
       //|  jne >3
@@ -4691,7 +4691,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
       //|  cmp RBd, LJ_TCDATA; jne <2
       //|  jmp ->vmeta_equal_cd
       dasm_put(Dst, 11919, -BCBIAS_J*4, LJ_TCDATA);
-#line 3107 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3107 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     } else {
       //|  je >2
       //|  cmp RBd, LJ_TCDATA; je ->vmeta_equal_cd
@@ -4700,7 +4700,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
       //|2:
       //|  ins_next
       dasm_put(Dst, 11972, LJ_TCDATA, -BCBIAS_J*4);
-#line 3114 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3114 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     }
     break;
 
@@ -4711,36 +4711,36 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  mov ITYPE, [BASE+RD*8]
     //|  add PC, 4
     dasm_put(Dst, 12019);
-#line 3123 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3123 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     if (op == BC_ISTC || op == BC_ISFC) {
       //|  mov RB, ITYPE
       dasm_put(Dst, 12028);
-#line 3125 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3125 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     }
     //|  sar ITYPE, 47
     //|  cmp ITYPEd, LJ_TISTRUECOND
     dasm_put(Dst, 3643, LJ_TISTRUECOND);
-#line 3128 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3128 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     if (op == BC_IST || op == BC_ISTC) {
       //|  jae >1
       dasm_put(Dst, 11541);
-#line 3130 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3130 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     } else {
       //|  jb >1
       dasm_put(Dst, 7313);
-#line 3132 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3132 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     }
     if (op == BC_ISTC || op == BC_ISFC) {
       //|  mov [BASE+RA*8], RB
       dasm_put(Dst, 12032);
-#line 3135 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3135 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     }
     //|  movzx RDd, PC_RD
     //|  branchPC RD
     //|1:					// Fallthrough to the next instruction.
     //|  ins_next
     dasm_put(Dst, 11546, -BCBIAS_J*4);
-#line 3140 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3140 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
 
   case BC_ISTYPE:
@@ -4751,14 +4751,14 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  jne ->vmeta_istype
     //|  ins_next
     dasm_put(Dst, 12037);
-#line 3149 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3149 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
   case BC_ISNUM:
     //|  ins_AD	// RA = src, RD = -(TISNUM-1)
     //|  checknumtp [BASE+RA*8], ->vmeta_istype
     //|  ins_next
     dasm_put(Dst, 12074, LJ_TISNUM);
-#line 3154 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3154 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
 
   /* -- Unary ops --------------------------------------------------------- */
@@ -4769,7 +4769,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  mov [BASE+RA*8], RB
     //|  ins_next_
     dasm_put(Dst, 12114);
-#line 3163 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3163 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
   case BC_NOT:
     //|  ins_AD	// RA = dst, RD = src
@@ -4783,7 +4783,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  mov [BASE+RA*8], RC
     //|  ins_next
     dasm_put(Dst, 12144, LJ_TISTRUECOND);
-#line 3175 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3175 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
   case BC_UNM:
     //|  ins_AD	// RA = dst, RD = src
@@ -4813,7 +4813,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  ins_next
     //|.endif
     dasm_put(Dst, 12200, LJ_TISNUM, (unsigned int)(U64x(80000000,00000000)), (unsigned int)((U64x(80000000,00000000))>>32));
-#line 3203 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3203 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
   case BC_LEN:
     //|  ins_AD	// RA = dst, RD = src
@@ -4835,14 +4835,14 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  cmp ITYPEd, LJ_TTAB; jne ->vmeta_len
     //|  mov TAB:CARG1, TAB:RD
     dasm_put(Dst, 12255, LJ_TSTR, Dt5(->len), LJ_TTAB);
-#line 3223 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3223 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 #if LJ_52
     //|  mov TAB:RB, TAB:RD->metatable
     //|  cmp TAB:RB, 0
     //|  jnz >9
     //|3:
     dasm_put(Dst, 12337, Dt6(->metatable));
-#line 3228 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3228 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 #endif
     //|->BC_LEN_Z:
     //|  mov RB, BASE			// Save BASE.
@@ -4857,14 +4857,14 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  movzx RAd, PC_RA
     //|  jmp <1
     dasm_put(Dst, 12353);
-#line 3241 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3241 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 #if LJ_52
     //|9:  // Check for __len.
     //|  test byte TAB:RB->nomm, 1<<MM_len
     //|  jnz <3
     //|  jmp ->vmeta_len			// 'no __len' flag NOT set: check.
     dasm_put(Dst, 12381, Dt6(->nomm), 1<<MM_len);
-#line 3246 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3246 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 #endif
     break;
 
@@ -4970,7 +4970,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
       break;
     }
     dasm_put(Dst, 12524);
-#line 3337 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3337 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
   case BC_SUBVN: case BC_SUBNV: case BC_SUBVV:
     //|  ins_arith sub, subsd
@@ -4988,7 +4988,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
       break;
     }
     dasm_put(Dst, 12524);
-#line 3340 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3340 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
   case BC_MULVN: case BC_MULNV: case BC_MULVV:
     //|  ins_arith imul, mulsd
@@ -5006,7 +5006,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
       break;
     }
     dasm_put(Dst, 12524);
-#line 3343 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3343 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
   case BC_DIVVN: case BC_DIVNV: case BC_DIVVV:
     //|  ins_arith divsd
@@ -5024,7 +5024,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
       break;
     }
     dasm_put(Dst, 12524);
-#line 3346 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3346 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
   case BC_MODVN:
     //|  ins_arithpre movsd, xmm1
@@ -5041,13 +5041,13 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     dasm_put(Dst, 12977, LJ_TISNUM, LJ_TISNUM);
       break;
     }
-#line 3349 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3349 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     //|->BC_MODVN_Z:
     //|  call ->vm_mod
     //|  ins_arithpost
     //|  ins_next
     dasm_put(Dst, 13028);
-#line 3353 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3353 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
   case BC_MODNV: case BC_MODVV:
     //|  ins_arithpre movsd, xmm1
@@ -5064,10 +5064,10 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     dasm_put(Dst, 12977, LJ_TISNUM, LJ_TISNUM);
       break;
     }
-#line 3356 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3356 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     //|  jmp ->BC_MODVN_Z			// Avoid 3 copies. It's slow anyway.
     dasm_put(Dst, 13061);
-#line 3357 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3357 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
   case BC_POW:
     //|  ins_arithpre movsd, xmm1
@@ -5084,7 +5084,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     dasm_put(Dst, 12977, LJ_TISNUM, LJ_TISNUM);
       break;
     }
-#line 3360 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3360 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     //|  mov RB, BASE
     //|  call extern pow
     //|  movzx RAd, PC_RA
@@ -5092,7 +5092,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  ins_arithpost
     //|  ins_next
     dasm_put(Dst, 13066);
-#line 3366 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3366 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
 
   case BC_CAT:
@@ -5116,7 +5116,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  mov [BASE+RA*8], RC
     //|  ins_next
     dasm_put(Dst, 13110, Dt1(->base), Dt1(->base));
-#line 3388 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3388 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
 
   /* -- Constant ops ------------------------------------------------------ */
@@ -5128,7 +5128,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  mov [BASE+RA*8], RD
     //|  ins_next
     dasm_put(Dst, 13202, (unsigned int)(((uint64_t)LJ_TSTR<<47)), (unsigned int)((((uint64_t)LJ_TSTR<<47))>>32));
-#line 3398 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3398 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
   case BC_KCDATA:
     //|.if FFI
@@ -5139,7 +5139,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  ins_next
     //|.endif
     dasm_put(Dst, 13202, (unsigned int)(((uint64_t)LJ_TCDATA<<47)), (unsigned int)((((uint64_t)LJ_TCDATA<<47))>>32));
-#line 3407 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3407 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
   case BC_KSHORT:
     //|  ins_AD	// RA = dst, RD = signed int16 literal
@@ -5154,7 +5154,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|.endif
     //|  ins_next
     dasm_put(Dst, 13243);
-#line 3420 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3420 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
   case BC_KNUM:
     //|  ins_AD	// RA = dst, RD = num const
@@ -5162,7 +5162,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  movsd qword [BASE+RA*8], xmm0
     //|  ins_next
     dasm_put(Dst, 13279);
-#line 3426 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3426 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
   case BC_KPRI:
     //|  ins_AD	// RA = dst, RD = primitive type (~)
@@ -5171,7 +5171,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  mov [BASE+RA*8], RD
     //|  ins_next
     dasm_put(Dst, 12166);
-#line 3433 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3433 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
   case BC_KNIL:
     //|  ins_AD	// RA = dst_start, RD = dst_end
@@ -5186,7 +5186,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  jbe <1
     //|  ins_next
     dasm_put(Dst, 13314, LJ_TNIL);
-#line 3446 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3446 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
 
   /* -- Upvalue and function ops ------------------------------------------ */
@@ -5201,7 +5201,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  mov [BASE+RA*8], RD
     //|  ins_next
     dasm_put(Dst, 13370, offsetof(GCfuncL, uvptr), DtA(->v));
-#line 3459 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3459 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
   case BC_USETV:
 #define TV2MARKOFS \
@@ -5234,7 +5234,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|.if not X64WIN
     //|  mov CARG2, RB
     dasm_put(Dst, 13424, offsetof(GCfuncL, uvptr), DtA(->closed), DtA(->v), TV2MARKOFS, LJ_GC_BLACK, LJ_TISGCV, LJ_TNUMX - LJ_TISGCV, Dt4(->gch.marked), LJ_GC_WHITES);
-#line 3490 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3490 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     //|  mov RB, BASE			// Save BASE.
     //|.else
     //|  xchg CARG2, RB			// Save BASE (CARG2 == BASE).
@@ -5244,7 +5244,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  mov BASE, RB			// Restore BASE.
     //|  jmp <1
     dasm_put(Dst, 13536, GG_DISP2G);
-#line 3498 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3498 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
 #undef TV2MARKOFS
   case BC_USETS:
@@ -5274,7 +5274,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  mov BASE, RB			// Restore BASE.
     //|  jmp <1
     dasm_put(Dst, 13560, offsetof(GCfuncL, uvptr), DtA(->v), (unsigned int)(((uint64_t)LJ_TSTR<<47)), (unsigned int)((((uint64_t)LJ_TSTR<<47))>>32), DtA(->marked), LJ_GC_BLACK, Dt4(->gch.marked), LJ_GC_WHITES, DtA(->closed), GG_DISP2G);
-#line 3526 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3526 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
   case BC_USETN:
     //|  ins_AD	// RA = upvalue #, RD = num const
@@ -5286,7 +5286,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  movsd qword [RA], xmm0
     //|  ins_next
     dasm_put(Dst, 13676, offsetof(GCfuncL, uvptr), DtA(->v));
-#line 3536 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3536 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
   case BC_USETP:
     //|  ins_AD	// RA = upvalue #, RD = primitive type (~)
@@ -5299,7 +5299,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  mov [RA], RD
     //|  ins_next
     dasm_put(Dst, 13734, offsetof(GCfuncL, uvptr), DtA(->v));
-#line 3547 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3547 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
   case BC_UCLO:
     //|  ins_AD	// RA = level, RD = target
@@ -5315,7 +5315,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|1:
     //|  ins_next
     dasm_put(Dst, 13791, -BCBIAS_J*4, Dt1(->openupval), Dt1(->base), Dt1(->base));
-#line 3561 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3561 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
 
   case BC_FNEW:
@@ -5336,7 +5336,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  mov [BASE+RA*8], LFUNC:RC
     //|  ins_next
     dasm_put(Dst, 13855, Dt1(->base), Dt1(->base), (unsigned int)(((uint64_t)LJ_TFUNC<<47)), (unsigned int)((((uint64_t)LJ_TFUNC<<47))>>32));
-#line 3580 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3580 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
 
   /* -- Table ops --------------------------------------------------------- */
@@ -5374,7 +5374,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  movzx RDd, PC_RD
     //|  jmp <1
     dasm_put(Dst, 13941, Dt1(->base), DISPATCH_GL(gc.total), DISPATCH_GL(gc.threshold), Dt1(->base), (unsigned int)(((uint64_t)LJ_TTAB<<47)), (unsigned int)((((uint64_t)LJ_TTAB<<47))>>32));
-#line 3616 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3616 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
   case BC_TDUP:
     //|  ins_AND	// RA = dst, RD = table const (~) (holding template table)
@@ -5401,7 +5401,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  not RD
     //|  jmp <2
     dasm_put(Dst, 14075, DISPATCH_GL(gc.total), DISPATCH_GL(gc.threshold), Dt1(->base), Dt1(->base), (unsigned int)(((uint64_t)LJ_TTAB<<47)), (unsigned int)((((uint64_t)LJ_TTAB<<47))>>32));
-#line 3641 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3641 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
 
   case BC_GGET:
@@ -5412,7 +5412,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  mov STR:RC, [KBASE+RD*8]
     //|  jmp ->BC_TGETS_Z
     dasm_put(Dst, 14184, Dt7(->env));
-#line 3650 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3650 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
   case BC_GSET:
     //|  ins_AND	// RA = src, RD = str const (~)
@@ -5422,7 +5422,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  mov STR:RC, [KBASE+RD*8]
     //|  jmp ->BC_TSETS_Z
     dasm_put(Dst, 14215, Dt7(->env));
-#line 3658 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3658 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
 
   case BC_TGETV:
@@ -5461,7 +5461,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  jz <1
     //|  test byte TAB:TMPR->nomm, 1<<MM_index
     dasm_put(Dst, 14246, LJ_TTAB, LJ_TISNUM, Dt6(->asize), Dt6(->array), LJ_TNIL, Dt6(->metatable));
-#line 3695 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3695 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     //|  jz ->vmeta_tgetv			// 'no __index' flag NOT set: check.
     //|  jmp <1
     //|
@@ -5470,7 +5470,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  cleartp STR:RC
     //|  jmp ->BC_TGETS_Z
     dasm_put(Dst, 14396, Dt6(->nomm), 1<<MM_index, LJ_TSTR);
-#line 3702 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3702 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
   case BC_TGETS:
     //|  ins_ABC	// RA = dst, RB = table, RC = str const (~)
@@ -5494,7 +5494,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|2:
     //|  mov [BASE+RA*8], ITYPE
     dasm_put(Dst, 14434, LJ_TTAB, Dt6(->hmask), Dt5(->hash), sizeof(Node), Dt6(->node), (unsigned int)(((uint64_t)LJ_TSTR<<47)), (unsigned int)((((uint64_t)LJ_TSTR<<47))>>32), DtB(->key), DtB(->val), LJ_TNIL);
-#line 3724 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3724 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     //|  ins_next
     //|
     //|4:  // Follow hash chain.
@@ -5512,7 +5512,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  jnz <2				// 'no __index' flag set: done.
     //|  jmp ->vmeta_tgets		// Caveat: preserve STR:RC.
     dasm_put(Dst, 14532, DtB(->next), LJ_TNIL, Dt6(->metatable), Dt6(->nomm), 1<<MM_index);
-#line 3740 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3740 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
   case BC_TGETB:
     //|  ins_ABC	// RA = dst, RB = table, RC = byte literal
@@ -5539,7 +5539,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  jmp <1
     dasm_put(Dst, 14602, LJ_TTAB, Dt6(->asize), Dt6(->array), LJ_TNIL, Dt6(->metatable), Dt6(->nomm), 1<<MM_index);
     dasm_put(Dst, 12376);
-#line 3764 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3764 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
   case BC_TGETR:
     //|  ins_ABC	// RA = dst, RB = table, RC = key
@@ -5561,7 +5561,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  mov [BASE+RA*8], ITYPE
     //|  ins_next
     dasm_put(Dst, 14718, Dt6(->asize), Dt6(->array));
-#line 3784 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3784 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
 
   case BC_TSETV:
@@ -5594,7 +5594,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|2:  // Set array slot.
     //|  mov RB, [BASE+RA*8]
     dasm_put(Dst, 14792, LJ_TTAB, LJ_TISNUM, Dt6(->asize), Dt6(->array), LJ_TNIL, Dt6(->marked), LJ_GC_BLACK);
-#line 3815 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3815 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     //|  mov [RC], RB
     //|  ins_next
     //|
@@ -5614,10 +5614,10 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|7:  // Possible table write barrier for the value. Skip valiswhite check.
     //|  barrierback TAB:RB, TMPR
     dasm_put(Dst, 14911, Dt6(->metatable), Dt6(->nomm), 1<<MM_newindex, LJ_TSTR, Dt6(->marked), (uint8_t)~LJ_GC_BLACK);
-#line 3833 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3833 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     //|  jmp <2
     dasm_put(Dst, 14996, DISPATCH_GL(gc.grayagain), DISPATCH_GL(gc.grayagain), Dt6(->gclist));
-#line 3834 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3834 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
   case BC_TSETS:
     //|  ins_ABC	// RA = src, RB = table, RC = str const (~)
@@ -5641,7 +5641,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|2:
     //|  test byte TAB:RB->marked, LJ_GC_BLACK	// isblack(table)
     dasm_put(Dst, 15013, LJ_TTAB, Dt6(->hmask), Dt5(->hash), sizeof(Node), Dt6(->nomm), Dt6(->node), (unsigned int)(((uint64_t)LJ_TSTR<<47)), (unsigned int)((((uint64_t)LJ_TSTR<<47))>>32), DtB(->key), LJ_TNIL);
-#line 3856 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3856 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     //|  jnz >7
     //|3:  // Set node value.
     //|  mov ITYPE, [BASE+RA*8]
@@ -5665,7 +5665,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  // But check for __newindex first.
     //|  mov TAB:TMPR, TAB:RB->metatable
     dasm_put(Dst, 15110, Dt6(->marked), LJ_GC_BLACK, Dt6(->metatable), Dt6(->nomm), 1<<MM_newindex, DtB(->next));
-#line 3878 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3878 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     //|  test TAB:TMPR, TAB:TMPR
     //|  jz >6				// No metatable: continue.
     //|  test byte TAB:TMPR->nomm, 1<<MM_newindex
@@ -5689,7 +5689,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  barrierback TAB:RB, ITYPE
     //|  jmp <3
     dasm_put(Dst, 15190, Dt6(->metatable), Dt6(->nomm), 1<<MM_newindex, Dt1(->base), Dt1(->base), Dt6(->marked), (uint8_t)~LJ_GC_BLACK, DISPATCH_GL(gc.grayagain), DISPATCH_GL(gc.grayagain), Dt6(->gclist));
-#line 3900 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3900 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
   case BC_TSETB:
     //|  ins_ABC	// RA = src, RB = table, RC = byte literal
@@ -5715,7 +5715,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  jz <1
     //|  test byte TAB:TMPR->nomm, 1<<MM_newindex
     dasm_put(Dst, 15287, LJ_TTAB, Dt6(->asize), Dt6(->array), LJ_TNIL, Dt6(->marked), LJ_GC_BLACK, Dt6(->metatable));
-#line 3924 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3924 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     //|  jz ->vmeta_tsetb			// 'no __newindex' flag NOT set: check.
     //|  jmp <1
     //|
@@ -5723,7 +5723,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  barrierback TAB:RB, TMPR
     //|  jmp <2
     dasm_put(Dst, 15403, Dt6(->nomm), 1<<MM_newindex, Dt6(->marked), (uint8_t)~LJ_GC_BLACK, DISPATCH_GL(gc.grayagain), DISPATCH_GL(gc.grayagain), Dt6(->gclist));
-#line 3930 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3930 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
   case BC_TSETR:
     //|  ins_ABC	// RA = src, RB = table, RC = key
@@ -5751,7 +5751,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  barrierback TAB:RB, TMPR
     //|  jmp <2
     dasm_put(Dst, 15440, Dt6(->marked), LJ_GC_BLACK, Dt6(->asize), Dt6(->array), Dt6(->marked), (uint8_t)~LJ_GC_BLACK, DISPATCH_GL(gc.grayagain), DISPATCH_GL(gc.grayagain), Dt6(->gclist));
-#line 3956 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3956 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
 
   case BC_TSETM:
@@ -5794,7 +5794,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  mov BASE, L:RB->base
     //|  movzx RAd, PC_RA			// Restore RA.
     dasm_put(Dst, 15545, Dt6(->marked), LJ_GC_BLACK, Dt6(->asize), Dt6(->array), Dt1(->base), Dt1(->base));
-#line 3997 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 3997 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     //|  movzx RDd, PC_RD			// Restore RD.
     //|  jmp <1				// Retry.
     //|
@@ -5802,7 +5802,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  barrierback TAB:RB, RD
     //|  jmp <2
     dasm_put(Dst, 15692, Dt6(->marked), (uint8_t)~LJ_GC_BLACK, DISPATCH_GL(gc.grayagain), DISPATCH_GL(gc.grayagain), Dt6(->gclist));
-#line 4003 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4003 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
 
   /* -- Calls and vararg handling ----------------------------------------- */
@@ -5812,18 +5812,18 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  // INTERP until enters *FUNC* bytecode and a new BASE is setup.
     //|  set_vmstate INTERP
     dasm_put(Dst, 15729, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP);
-#line 4011 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4011 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     if (op == BC_CALLM) {
       //|  add NARGS:RDd, MULTRES
       dasm_put(Dst, 15738);
-#line 4013 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4013 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     }
     //|  mov LFUNC:RB, [BASE+RA*8]
     //|  checkfunc LFUNC:RB, ->vmeta_call_ra
     //|  lea BASE, [BASE+RA*8+16]
     //|  ins_call
     dasm_put(Dst, 15742, LJ_TFUNC, Dt7(->pc));
-#line 4018 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4018 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
 
   case BC_CALLMT:
@@ -5831,7 +5831,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  add NARGS:RDd, MULTRES
     //|  // Fall through. Assumes BC_CALLT follows and ins_AD is a no-op.
     dasm_put(Dst, 15738);
-#line 4024 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4024 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
   case BC_CALLT:
     //|  ins_AD	// RA = base, RD = nargs+1
@@ -5867,7 +5867,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|4:
     //|  ins_callt
     dasm_put(Dst, 15807, LJ_TFUNC, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, FRAME_TYPE, Dt7(->ffid));
-#line 4058 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4058 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     //|
     //|5:  // Tailcall to a fast function.
     //|  test PCd, FRAME_TYPE		// Lua frame below?
@@ -5892,7 +5892,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  add PCd, FRAME_VARG
     //|  jmp <1
     dasm_put(Dst, 15928, Dt7(->pc), FRAME_TYPE, Dt7(->pc), PC2PROTO(k), FRAME_VARG, FRAME_TYPEP, FRAME_VARG);
-#line 4081 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4081 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
 
   case BC_ITERC:
@@ -5909,7 +5909,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  mov BASE, RA
     //|  ins_call
     dasm_put(Dst, 16036, 2+1, LJ_TFUNC, Dt7(->pc));
-#line 4096 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4096 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
 
   case BC_ITERN:
@@ -5957,7 +5957,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  cmp RCd, TAB:RB->hmask; ja <3	// End of iteration? Branch to ITERL+1.
     //|  imul ITYPEd, RCd, #NODE
     dasm_put(Dst, 16126, Dt6(->asize), Dt6(->array), LJ_TNIL, -BCBIAS_J*4, Dt6(->hmask));
-#line 4142 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4142 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     //|  add NODE:ITYPE, TAB:RB->node
     //|  cmp aword NODE:ITYPE->val, LJ_TNIL; je >7
     //|  lea TMPRd, [RCd+TMPRd+1]
@@ -5973,7 +5973,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  add RCd, 1
     //|  jmp <6
     dasm_put(Dst, 16265, sizeof(Node), Dt6(->node), DtB(->val), LJ_TNIL, DtB(->key), DtB(->val));
-#line 4156 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4156 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
 
   case BC_ISNEXT:
@@ -5992,11 +5992,11 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  mov PC_OP, BC_JMP
     //|  branchPC RD
     dasm_put(Dst, 16324, LJ_TFUNC, LJ_TTAB, LJ_TNIL, Dt8(->ffid), FF_next_N, -BCBIAS_J*4, (unsigned int)(U64x(fffe7fff, 00000000)), (unsigned int)((U64x(fffe7fff, 00000000))>>32), BC_JMP);
-#line 4173 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4173 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     //|  mov byte [PC], BC_ITERC
     //|  jmp <1
     dasm_put(Dst, 16443, -BCBIAS_J*4, BC_ITERC);
-#line 4175 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4175 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
 
   case BC_VARG:
@@ -6041,7 +6041,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  cmp RC, L:RB->maxstack
     //|  ja >7				// Need to grow stack?
     dasm_put(Dst, 16457, (16+FRAME_VARG), LJ_TNIL, Dt1(->maxstack));
-#line 4218 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4218 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     //|6:  // Copy all vararg slots.
     //|  mov RC, [TMPR-16]
     //|  add TMPR, 8
@@ -6067,7 +6067,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  add TMPR, BASE
     //|  jmp <6
     dasm_put(Dst, 16619, Dt1(->base), Dt1(->top), Dt1(->base), Dt1(->top));
-#line 4242 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4242 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
 
   /* -- Returns ----------------------------------------------------------- */
@@ -6077,7 +6077,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  add RDd, MULTRES			// MULTRES >=1, so RD >=1.
     //|  // Fall through. Assumes BC_RET follows and ins_AD is a no-op.
     dasm_put(Dst, 15738);
-#line 4250 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4250 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
 
   case BC_RET: case BC_RET0: case BC_RET1:
@@ -6085,7 +6085,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     if (op != BC_RET0) {
       //|  shl RAd, 3
       dasm_put(Dst, 16711);
-#line 4256 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4256 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     }
     //|1:
     //|  // INTERP until the old BASE & KBASE is restored.
@@ -6095,7 +6095,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  test PCd, FRAME_TYPE		// Check frame type marker.
     //|  jnz >7				// Not returning to a fixarg Lua func?
     dasm_put(Dst, 16715, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, FRAME_TYPE);
-#line 4264 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4264 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     switch (op) {
     case BC_RET:
       //|->BC_RET_Z:
@@ -6115,20 +6115,20 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
       //|  cmp RBd, RDd			// More results expected?
       //|  ja >6
       dasm_put(Dst, 16739);
-#line 4282 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4282 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
       break;
     case BC_RET1:
       //|  mov RB, [BASE+RA]
       //|  mov [BASE-16], RB
       dasm_put(Dst, 16792);
-#line 4286 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4286 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
       /* fallthrough */
     case BC_RET0:
       //|5:
       //|  cmp PC_RB, RDL			// More results expected?
       //|  ja >6
       dasm_put(Dst, 16802);
-#line 4291 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4291 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     default:
       break;
     }
@@ -6145,16 +6145,16 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|
     //|6:  // Fill up results with nil.
     dasm_put(Dst, 16813, Dt7(->pc), PC2PROTO(k), DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, DISPATCH_GL(top_frame_info.top_frame), DISPATCH_GL(vmstate), ~LJ_VMST_LFUNC);
-#line 4306 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4306 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     if (op == BC_RET) {
       //|  mov aword [KBASE-16], LJ_TNIL	// Note: relies on shifted base.
       //|  add KBASE, 8
       dasm_put(Dst, 16888, LJ_TNIL);
-#line 4309 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4309 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     } else {
       //|  mov aword [BASE+RD*8-24], LJ_TNIL
       dasm_put(Dst, 16899, LJ_TNIL);
-#line 4311 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4311 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     }
     //|  add RD, 1
     //|  jmp <5
@@ -6166,15 +6166,15 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  // Return from vararg function: relocate BASE down and RA up.
     //|  sub BASE, RB
     dasm_put(Dst, 16906, -FRAME_VARG, FRAME_TYPEP);
-#line 4321 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4321 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     if (op != BC_RET0) {
       //|  add RA, RB
       dasm_put(Dst, 16933);
-#line 4323 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4323 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     }
     //|  jmp <1
     dasm_put(Dst, 12376);
-#line 4325 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4325 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
 
   /* -- Loops and branches ------------------------------------------------ */
@@ -6190,7 +6190,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|.endif
     //| // Fall through. Assumes BC_IFORL follows and ins_AJ is a no-op.
     dasm_put(Dst, 16938, HOTCOUNT_PCMASK, GG_DISP2HOT, HOTCOUNT_LOOP);
-#line 4339 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4339 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
 
   case BC_JFORI:
@@ -6204,13 +6204,13 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  ins_AJ	// RA = base, RD = target (after end of loop or start of loop)
     //|  lea RA, [BASE+RA*8]
     dasm_put(Dst, 16959);
-#line 4351 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4351 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     if (LJ_DUALNUM) {
       //|  mov RB, FOR_IDX
       //|  checkint RB, >9
       //|  mov TMPR, FOR_STOP
       dasm_put(Dst, 16964, LJ_TISNUM);
-#line 4355 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4355 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
       if (!vk) {
 	//|  checkint TMPR, ->vmeta_for
 	//|  mov ITYPE, FOR_STEP
@@ -6218,13 +6218,13 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
 	//|  sar ITYPE, 47;
 	//|  cmp ITYPEd, LJ_TISNUM; jne ->vmeta_for
 	dasm_put(Dst, 16990, LJ_TISNUM, LJ_TISNUM);
-#line 4361 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4361 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
       } else {
 #ifdef LUA_USE_ASSERT
 	//|  checkinttp FOR_STOP, ->assert_bad_for_arg_type
 	//|  checkinttp FOR_STEP, ->assert_bad_for_arg_type
 	dasm_put(Dst, 17033, LJ_TISNUM, LJ_TISNUM);
-#line 4365 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4365 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 #endif
 	//|  mov ITYPE, FOR_STEP
 	//|  test ITYPEd, ITYPEd; js >5
@@ -6232,19 +6232,19 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
 	//|  setint RB
 	//|  mov FOR_IDX, RB
 	dasm_put(Dst, 17070, (unsigned int)(((uint64_t)LJ_TISNUM<<47)), (unsigned int)((((uint64_t)LJ_TISNUM<<47))>>32));
-#line 4371 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4371 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
       }
       //|  cmp RBd, TMPRd
       //|  mov FOR_EXT, RB
       dasm_put(Dst, 17099);
-#line 4374 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4374 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
       if (op == BC_FORI) {
 	//|  jle >7
 	//|1:
 	//|6:
 	//|  branchPC RD
 	dasm_put(Dst, 17107, -BCBIAS_J*4);
-#line 4379 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4379 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
       } else if (op == BC_JFORI) {
 	//|  branchPC RD
 	//|  movzx RDd, PC_RD
@@ -6252,116 +6252,116 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
 	//|1:
 	//|6:
 	dasm_put(Dst, 17122, -BCBIAS_J*4, BC_JLOOP);
-#line 4385 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4385 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
       } else if (op == BC_IFORL) {
 	//|  jg >7
 	//|6:
 	//|  branchPC RD
 	//|1:
 	dasm_put(Dst, 17141, -BCBIAS_J*4);
-#line 4390 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4390 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
       } else {
 	//|  jle =>BC_JLOOP
 	//|1:
 	//|6:
 	dasm_put(Dst, 17133, BC_JLOOP);
-#line 4394 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4394 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
       }
       //|7:
       //|  ins_next
       //|
       //|5:  // Invert check for negative step.
       dasm_put(Dst, 17156);
-#line 4399 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4399 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
       if (!vk) {
 	//|  sar ITYPE, 47;
 	//|  cmp ITYPEd, LJ_TISNUM; jne ->vmeta_for
 	dasm_put(Dst, 17018, LJ_TISNUM);
-#line 4402 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4402 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
       } else {
 	//|  add RBd, ITYPEd; jo <1
 	//|  setint RB
 	//|  mov FOR_IDX, RB
 	dasm_put(Dst, 17182, (unsigned int)(((uint64_t)LJ_TISNUM<<47)), (unsigned int)((((uint64_t)LJ_TISNUM<<47))>>32));
-#line 4406 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4406 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
       }
       //|  cmp RBd, TMPRd
       //|  mov FOR_EXT, RB
       dasm_put(Dst, 17099);
-#line 4409 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4409 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
       if (op == BC_FORI) {
 	//|  jge <7
 	dasm_put(Dst, 17200);
-#line 4411 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4411 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
       } else if (op == BC_JFORI) {
 	//|  branchPC RD
 	//|  movzx RDd, PC_RD
 	//|  jge =>BC_JLOOP
 	dasm_put(Dst, 17205, -BCBIAS_J*4, BC_JLOOP);
-#line 4415 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4415 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
       } else if (op == BC_IFORL) {
 	//|  jl <7
 	dasm_put(Dst, 17220);
-#line 4417 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4417 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
       } else {
 	//|  jge =>BC_JLOOP
 	dasm_put(Dst, 17216, BC_JLOOP);
-#line 4419 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4419 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
       }
       //|  jmp <6
       //|9:  // Fallback to FP variant.
       dasm_put(Dst, 17225);
-#line 4422 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4422 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
       if (!vk) {
 	//|  jae ->vmeta_for
 	dasm_put(Dst, 17232);
-#line 4424 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4424 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
       }
     } else if (!vk) {
       //|  checknumtp FOR_IDX, ->vmeta_for
       dasm_put(Dst, 17237, LJ_TISNUM);
-#line 4427 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4427 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     }
     if (!vk) {
       //|  checknumtp FOR_STOP, ->vmeta_for
       dasm_put(Dst, 17255, LJ_TISNUM);
-#line 4430 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4430 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     } else {
 #ifdef LUA_USE_ASSERT
       //|  checknumtp FOR_STOP, ->assert_bad_for_arg_type
       //|  checknumtp FOR_STEP, ->assert_bad_for_arg_type
       dasm_put(Dst, 17274, LJ_TISNUM, LJ_TISNUM);
-#line 4434 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4434 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
 #endif
     }
     //|  mov RB, FOR_STEP
     dasm_put(Dst, 17311);
-#line 4437 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4437 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     if (!vk) {
       //|  checknum RB, ->vmeta_for
       dasm_put(Dst, 17316, LJ_TISNUM);
-#line 4439 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4439 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     }
     //|  movsd xmm0, qword FOR_IDX
     //|  movsd xmm1, qword FOR_STOP
     dasm_put(Dst, 17335);
-#line 4442 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4442 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     if (vk) {
       //|  addsd xmm0, qword FOR_STEP
       //|  movsd qword FOR_IDX, xmm0
       //|  test RB, RB; js >3
       dasm_put(Dst, 17347);
-#line 4446 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4446 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     } else {
       //|  jl >3
       dasm_put(Dst, 17367);
-#line 4448 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4448 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     }
     //|  ucomisd xmm1, xmm0
     //|1:
     //|  movsd qword FOR_EXT, xmm0
     dasm_put(Dst, 17372);
-#line 4452 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4452 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     if (op == BC_FORI) {
       //|.if DUALNUM
       //|  jnb <7
@@ -6370,13 +6370,13 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
       //|  branchPC RD
       //|.endif
       dasm_put(Dst, 17385, -BCBIAS_J*4);
-#line 4459 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4459 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     } else if (op == BC_JFORI) {
       //|  branchPC RD
       //|  movzx RDd, PC_RD
       //|  jnb =>BC_JLOOP
       dasm_put(Dst, 17396, -BCBIAS_J*4, BC_JLOOP);
-#line 4463 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4463 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     } else if (op == BC_IFORL) {
       //|.if DUALNUM
       //|  jb <7
@@ -6385,11 +6385,11 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
       //|  branchPC RD
       //|.endif
       dasm_put(Dst, 17411, -BCBIAS_J*4);
-#line 4470 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4470 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     } else {
       //|  jnb =>BC_JLOOP
       dasm_put(Dst, 17407, BC_JLOOP);
-#line 4472 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4472 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     }
     //|.if DUALNUM
     //|  jmp <6
@@ -6402,7 +6402,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  ucomisd xmm0, xmm1
     //|  jmp <1
     dasm_put(Dst, 17422);
-#line 4483 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4483 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
 
   case BC_ITERL:
@@ -6411,7 +6411,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|.endif
     //| // Fall through. Assumes BC_IITERL follows and ins_AJ is a no-op.
     dasm_put(Dst, 16938, HOTCOUNT_PCMASK, GG_DISP2HOT, HOTCOUNT_LOOP);
-#line 4490 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4490 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
 
   case BC_JITERL:
@@ -6424,22 +6424,22 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  mov RB, [RA]
     //|  cmp RB, LJ_TNIL; je >1		// Stop if iterator returned nil.
     dasm_put(Dst, 17456, LJ_TNIL);
-#line 4501 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4501 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     if (op == BC_JITERL) {
       //|  mov [RA-8], RB
       //|  jmp =>BC_JLOOP
       dasm_put(Dst, 17473, BC_JLOOP);
-#line 4504 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4504 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     } else {
       //|  branchPC RD			// Otherwise save control var + branch.
       //|  mov [RA-8], RB
       dasm_put(Dst, 17482, -BCBIAS_J*4);
-#line 4507 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4507 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     }
     //|1:
     //|  ins_next
     dasm_put(Dst, 11557);
-#line 4510 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4510 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
 
   case BC_LOOP:
@@ -6451,14 +6451,14 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|.endif
     //| // Fall through. Assumes BC_ILOOP follows and ins_A is a no-op.
     dasm_put(Dst, 16938, HOTCOUNT_PCMASK, GG_DISP2HOT, HOTCOUNT_LOOP);
-#line 4520 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4520 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
 
   case BC_ILOOP:
     //|  ins_A	// RA = base, RD = target (loop extent)
     //|  ins_next
     dasm_put(Dst, 11559);
-#line 4525 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4525 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
 
   case BC_JLOOP:
@@ -6496,7 +6496,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  jmp RD
     //|.endif
     dasm_put(Dst, 17494, DISPATCH_J(trace), DtD(->mcode), DISPATCH_GL(jit_base), DISPATCH_GL(tmpbuf.L));
-#line 4561 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4561 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
 
   case BC_JMP:
@@ -6504,7 +6504,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  branchPC RD
     //|  ins_next
     dasm_put(Dst, 17538, -BCBIAS_J*4);
-#line 4567 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4567 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
 
   /* -- Function headers -------------------------------------------------- */
@@ -6521,7 +6521,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  hotcall RBd
     //|.endif
     dasm_put(Dst, 17566, HOTCOUNT_PCMASK, GG_DISP2HOT, HOTCOUNT_CALL);
-#line 4582 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4582 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   case BC_FUNCV:  /* NYI: compiled vararg functions. */
     //| // Fall through. Assumes BC_IFUNCF/BC_IFUNCV follow and ins_AD is a no-op.
     break;
@@ -6543,16 +6543,16 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  jbe >3
     //|2:
     dasm_put(Dst, 17587, -4+PC2PROTO(k), DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, DISPATCH_GL(top_frame_info.top_frame), DISPATCH_GL(vmstate), ~LJ_VMST_LFUNC, Dt1(->maxstack), -4+PC2PROTO(numparams));
-#line 4602 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4602 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     if (op == BC_JFUNCF) {
       //|  movzx RDd, PC_RD
       //|  jmp =>BC_JLOOP
       dasm_put(Dst, 17635, BC_JLOOP);
-#line 4605 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4605 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     } else {
       //|  ins_next
       dasm_put(Dst, 11559);
-#line 4607 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4607 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     }
     //|
     //|3:  // Clear missing parameters.
@@ -6562,7 +6562,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  jbe <3
     //|  jmp <2
     dasm_put(Dst, 17644, LJ_TNIL);
-#line 4615 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4615 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
 
   case BC_JFUNCV:
@@ -6571,7 +6571,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
 #endif
     //| int3  // NYI: compiled vararg functions
     dasm_put(Dst, 11067);
-#line 4622 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4622 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;  /* NYI: compiled vararg functions. */
 
   case BC_IFUNCV:
@@ -6604,17 +6604,17 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  jnz <1
     //|2:
     dasm_put(Dst, 17667, FRAME_VARG+8, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, DISPATCH_GL(top_frame_info.top_frame), DISPATCH_GL(vmstate), ~LJ_VMST_LFUNC, Dt1(->maxstack), -4+PC2PROTO(numparams), LJ_TNIL);
-#line 4653 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4653 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     if (op == BC_JFUNCV) {
       //|  movzx RDd, PC_RD
       //|  jmp =>BC_JLOOP
       dasm_put(Dst, 17635, BC_JLOOP);
-#line 4656 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4656 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     } else {
       //|  mov KBASE, [PC-4+PC2PROTO(k)]
       //|  ins_next
       dasm_put(Dst, 17785, -4+PC2PROTO(k));
-#line 4659 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4659 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     }
     //|
     //|3:  // Clear missing parameters.
@@ -6624,7 +6624,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  jnz <3
     //|  jmp <2
     dasm_put(Dst, 17811, LJ_TNIL);
-#line 4667 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4667 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
 
   case BC_FUNCC:
@@ -6640,30 +6640,30 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  cmp RA, L:RB->maxstack
     //|  mov L:RB->top, RD
     dasm_put(Dst, 17834, Dt8(->f), Dt1(->base), 8*LUA_MINSTACK, Dt1(->maxstack), Dt1(->top));
-#line 4681 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4681 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     if (op == BC_FUNCC) {
       //|  mov CARG1, L:RB		// Caveat: CARG1 may be RA.
       dasm_put(Dst, 17880);
-#line 4683 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4683 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     } else {
       //|  mov CARG2, KBASE
       //|  mov CARG1, L:RB		// Caveat: CARG1 may be RA.
       dasm_put(Dst, 17885);
-#line 4686 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4686 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     }
     //|  ja ->vm_growstack_c		// Need to grow stack.
     //|  set_vmstate_sync_base CFUNC	// CFUNC before entering C function.
     dasm_put(Dst, 17894, DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, DISPATCH_GL(top_frame_info.top_frame), DISPATCH_GL(vmstate), ~LJ_VMST_CFUNC);
-#line 4689 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4689 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     if (op == BC_FUNCC) {
       //|  call KBASE			// (lua_State *L)
       dasm_put(Dst, 17913);
-#line 4691 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4691 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     } else {
       //|  // (lua_State *L, lua_CFunction f)
       //|  call aword [DISPATCH+DISPATCH_GL(wrapf)]
       dasm_put(Dst, 17918, DISPATCH_GL(wrapf));
-#line 4694 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4694 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     }
     //|  // nresults returned in eax (RD).
     //|  mov BASE, L:RB->base
@@ -6676,7 +6676,7 @@ static void build_ins(BuildCtx *ctx, BCOp op, int defop)
     //|  mov PC, [BASE-8]			// Fetch PC of caller.
     //|  jmp ->vm_returnc
     dasm_put(Dst, 17924, Dt1(->base), DISPATCH_GL(cur_L), DISPATCH_GL(vmstate), ~LJ_VMST_INTERP, Dt1(->top));
-#line 4705 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4705 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
     break;
 
   /* ---------------------------------------------------------------------- */
@@ -6695,7 +6695,7 @@ static int build_backend(BuildCtx *ctx)
   build_subroutines(ctx);
   //|.code_op
   dasm_put(Dst, 17959);
-#line 4722 "/home/mandesero/Desktop/luajit/src/vm_x64.dasc"
+#line 4722 "/home/mandesero_wsl/luajit/src/vm_x64.dasc"
   for (op = 0; op < BC__MAX; op++)
     build_ins(ctx, (BCOp)op, op);
   return BC__MAX;
