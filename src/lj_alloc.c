@@ -772,6 +772,7 @@ typedef struct malloc_state *mstate;
 static msegmentptr segment_holding(mstate m, char *addr)
 {
   msegmentptr sp = &m->seg;
+#if LUAJIT_USE_ASAN
   ASAN_UNPOISON_MEMORY_REGION(sp, MSEGMENT_SIZE);
   for (;;) {
     if (addr >= sp->base && addr < sp->base + sp->size) {
@@ -786,6 +787,14 @@ static msegmentptr segment_holding(mstate m, char *addr)
       return 0;
     }
   }
+#else
+  for (;;) {
+    if (addr >= sp->base && addr < sp->base + sp->size)
+      return sp;
+    if ((sp = sp->next) == 0)
+      return 0;
+  }
+#endif
 }
 
 /* Return true if segment contains a segment link */
@@ -1083,7 +1092,11 @@ static mchunkptr direct_resize(mchunkptr oldp, size_t nb)
 static void init_top(mstate m, mchunkptr p, size_t psize)
 {
   /* Ensure alignment */
+#if LUAJIT_USE_ASAN
   size_t offset = align_offset(_chunk2mem(p));
+#else
+  size_t offset = align_offset(chunk2mem(p));
+#endif
   p = (mchunkptr)((char *)p + offset);
   psize -= offset;
 
@@ -1146,7 +1159,9 @@ static void add_segment(mstate m, char *tbase, size_t tsize)
   char *old_top = (char *)m->top;
   msegmentptr oldsp = segment_holding(m, old_top);
 
+#if LUAJIT_USE_ASAN
   ASAN_UNPOISON_MEMORY_REGION(oldsp, sizeof(struct malloc_segment));
+#endif
 
   char *old_end = oldsp->base + oldsp->size;
   size_t ssize = pad_request(sizeof(struct malloc_segment));
@@ -1155,7 +1170,11 @@ static void add_segment(mstate m, char *tbase, size_t tsize)
   char *asp = rawsp + offset;
   char *csp = (asp < (old_top + MIN_CHUNK_SIZE))? old_top : asp;
   mchunkptr sp = (mchunkptr)csp;
+
+#if LUAJIT_USE_ASAN
   msegmentptr ss = (msegmentptr)(_chunk2mem(sp));
+#endif
+
   mchunkptr tnext = chunk_plus_offset(sp, ssize);
   mchunkptr p = tnext;
 
@@ -1436,18 +1455,25 @@ static void *tmalloc_small(mstate m, size_t nb)
 
 void *lj_alloc_create(void)
 {
+#if LUAJIT_USE_ASAN
   size_t tsize = DEFAULT_GRANULARITY - FREDZONE_SIZE;
+#else
+  size_t tsize = DEFAULT_GRANULARITY;
+#endif
   char *tbase;
   INIT_MMAP();
   tbase = (char *)(CALL_MMAP(tsize));
   if (tbase != CMFAIL) {
     size_t msize = pad_request(sizeof(struct malloc_state));
     mchunkptr mn;
-    mchunkptr msp = _align_as_chunk(tbase);
 
-    /* ??? */
+#if LUAJIT_USE_ASAN
+    mchunkptr msp = _align_as_chunk(tbase);
     mstate m = (mstate)(_chunk2mem(msp));
-    // mstate m = (mstate)(chunk2mem(msp));
+#else
+    mchunkptr msp = align_as_chunk(tbase);
+    mstate m = (mstate)(chunk2mem(msp));
+#endif
     
     memset(m, 0, msize);
     msp->head = (msize|PINUSE_BIT|CINUSE_BIT);
@@ -1456,9 +1482,11 @@ void *lj_alloc_create(void)
     m->release_checks = MAX_RELEASE_CHECK_RATE;
     init_bins(m);
 
-    /* ??? */
+#if LUAJIT_USE_ASAN
     mn = next_chunk(_mem2chunk(m));
-    // mn = next_chunk(mem2chunk(m));
+#else
+    mn = next_chunk(mem2chunk(m));
+#endif
 
     init_top(m, mn, (size_t)((tbase + tsize) - (char *)mn) - TOP_FOOT_SIZE);
     return m;
@@ -1474,7 +1502,12 @@ void lj_alloc_destroy(void *msp)
     char *base = sp->base;
     size_t size = sp->size;
     sp = sp->next;
+
+#if LUAJIT_USE_ASAN
     CALL_MUNMAP_chunk(base, size);
+#else
+    CALL_MUNMAP(base, size);
+#endif
   }
 }
 
@@ -1485,7 +1518,7 @@ static LJ_NOINLINE void *lj_alloc_malloc(void *msp, size_t nsize)
   size_t mem_size = nsize;
   size_t align_size = align_up(mem_size, SIZE_ALIGMENT);
   size_t poison_size = align_size + FREDZONE_SIZE;
-  nsize = poison_size + TWO_SIZE_T_SIZES;
+  nsize = poison_size;
 #endif
 
   mstate ms = (mstate)msp;
