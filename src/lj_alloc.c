@@ -233,6 +233,78 @@ static int CALL_MUNMAP(void *ptr, size_t size)
 #include <fcntl.h>
 #include <unistd.h>
 
+#if LUAJIT_USE_ASAN
+
+#include <sanitizer/asan_interface.h>
+
+#define MAP_FAILED  ((void *) -1)
+
+/* Recommended redzone size from 16 to 2048 bytes (must be a multiple of 8) */
+#define REDZONE_SIZE FOUR_SIZE_T_SIZES
+
+/* Total redzone size around allocation */
+#define FREDZONE_SIZE (REDZONE_SIZE << 1)
+
+/* Multiple of the allocated memory size */
+#define SIZE_ALIGNMENT MALLOC_ALIGNMENT
+
+/* Multiple of the allocated memory address */
+#define ADDR_ALIGNMENT MALLOC_ALIGNMENT
+
+#define FREE_BLOCK_TYPE uint64_t
+#define FREE_BLOCK_SIZE sizeof(FREE_BLOCK_TYPE)
+
+/* Casting to the nearest multiple of alignment from above */
+void *align_up(void *ptr, size_t alignment)
+{
+  uintptr_t p = (uintptr_t)ptr;
+  return (void *)((p + alignment - 1) & ~(alignment - 1));
+}
+
+void *asan_memory_region(void *ptr, size_t mem_size, size_t poison_size)
+{
+  if (ptr == NULL)
+    return NULL;
+  size_t *sptr = (size_t *)ptr;
+  ASAN_UNPOISON_MEMORY_REGION(ptr, TWO_SIZE_T_SIZES);
+  sptr[0] = mem_size;
+  sptr[1] = poison_size;
+  ASAN_POISON_MEMORY_REGION(ptr, poison_size);
+  ptr += REDZONE_SIZE;
+  ASAN_UNPOISON_MEMORY_REGION(ptr, mem_size);
+  return ptr;
+}
+
+void check_mem_for_free(void *ptr, size_t size)
+{
+  FREE_BLOCK_TYPE *tmp = (FREE_BLOCK_TYPE *)ptr;
+  for (int i = 0; i < size / FREE_BLOCK_SIZE; ++i) {
+    tmp[i] = tmp[i];
+  }
+  uint8_t *b = (uint8_t *)(ptr) + (size - size % FREE_BLOCK_SIZE);
+  for (int i = 0; i < size % FREE_BLOCK_SIZE; ++i) {
+    b[i] = b[i];
+  }
+}
+
+size_t asan_get_mem_size(void *ptr)
+{
+  ASAN_UNPOISON_MEMORY_REGION(ptr - REDZONE_SIZE, SIZE_T_SIZE);
+  size_t mem_size = *((size_t *)(ptr - REDZONE_SIZE));
+  ASAN_POISON_MEMORY_REGION(ptr - REDZONE_SIZE, SIZE_T_SIZE);
+  return mem_size;
+}
+
+size_t asan_get_poison_size(void *ptr)
+{
+  ASAN_UNPOISON_MEMORY_REGION(ptr - REDZONE_SIZE + SIZE_T_SIZE, SIZE_T_SIZE);
+  size_t poison_size = *((size_t *)(ptr - REDZONE_SIZE + SIZE_T_SIZE));
+  ASAN_POISON_MEMORY_REGION(ptr - REDZONE_SIZE + SIZE_T_SIZE, SIZE_T_SIZE);
+  return poison_size;
+}
+
+#endif
+
 static uintptr_t mmap_probe_seed(void)
 {
   uintptr_t val;
@@ -252,6 +324,21 @@ static void *mmap_probe(size_t size)
   static uintptr_t hint_prng = 0;
   int olderr = errno;
   int retry;
+#if LUAJIT_USE_ASAN
+  size_t mem_size = size;
+  size = (size_t)align_up((void *)size, SIZE_ALIGNMENT) + FREDZONE_SIZE;
+  for (retry = 0; retry < LJ_ALLOC_MMAP_PROBE_MAX; retry++) {
+    void *p = mmap((void *)hint_addr, size, MMAP_PROT, MMAP_FLAGS_PROBE, -1, 0);
+    uintptr_t addr = (uintptr_t)p;
+    if ((addr >> LJ_ALLOC_MBITS) == 0 && addr >= LJ_ALLOC_MMAP_PROBE_LOWER &&
+  ((addr + size) >> LJ_ALLOC_MBITS) == 0) {
+      /* We got a suitable address. Bump the hint address. */
+      hint_addr = addr + size;
+      errno = olderr;
+
+      return asan_memory_region(p, mem_size, size);
+    }
+#else
   for (retry = 0; retry < LJ_ALLOC_MMAP_PROBE_MAX; retry++) {
     void *p = mmap((void *)hint_addr, size, MMAP_PROT, MMAP_FLAGS_PROBE, -1, 0);
     uintptr_t addr = (uintptr_t)p;
@@ -262,6 +349,7 @@ static void *mmap_probe(size_t size)
       errno = olderr;
       return p;
     }
+#endif
     if (p != MFAIL) {
       munmap(p, size);
     } else if (errno == ENOMEM) {
@@ -313,6 +401,26 @@ static void *mmap_map32(size_t size)
   if (fallback)
     return mmap_probe(size);
 #endif
+#if LUAJIT_USE_ASAN
+	{
+		int olderr = errno;
+		size_t mem_size = size;
+		size = (size_t)align_up((void *)size, SIZE_ALIGNMENT) + FREDZONE_SIZE;
+		void *ptr = mmap((void *)LJ_ALLOC_MMAP32_START, size, MMAP_PROT,
+				 MAP_32BIT | MMAP_FLAGS, -1, 0);
+		errno = olderr;
+		if (ptr != MFAIL)
+			return asan_memory_region(ptr, mem_size, size);
+		size = mem_size;
+		/* This only allows 1GB on Linux. So fallback to probing to get 2GB. */
+#if LJ_ALLOC_MMAP_PROBE
+		if (ptr == MFAIL) {
+			fallback = 1;
+			return mmap_probe(size);
+		}
+#endif
+	}
+#else
   {
     int olderr = errno;
     void *ptr = mmap((void *)LJ_ALLOC_MMAP32_START, size, MMAP_PROT, MAP_32BIT|MMAP_FLAGS, -1, 0);
@@ -326,6 +434,7 @@ static void *mmap_map32(size_t size)
 #endif
     return ptr;
   }
+#endif
 }
 
 #endif
@@ -337,10 +446,19 @@ static void *mmap_map32(size_t size)
 #else
 static void *CALL_MMAP(size_t size)
 {
+#if LUAJIT_USE_ASAN
+  int olderr = errno;
+  size_t mem_size = size;
+  size = (size_t)align_up((void *)size, SIZE_ALIGNMENT) + FREDZONE_SIZE;
+  void *ptr = mmap(NULL, size, MMAP_PROT, MMAP_FLAGS, -1, 0);
+  errno = olderr;
+  return asan_memory_region(ptr, mem_size, size);
+#else
   int olderr = errno;
   void *ptr = mmap(NULL, size, MMAP_PROT, MMAP_FLAGS, -1, 0);
   errno = olderr;
   return ptr;
+#endif
 }
 #endif
 
@@ -360,20 +478,50 @@ static void init_mmap(void)
 
 static int CALL_MUNMAP(void *ptr, size_t size)
 {
+#if LUAJIT_USE_ASAN
+  int olderr = errno;
+  check_mem_for_free(ptr, size);
+  size_t poison_size = asan_get_poison_size(ptr);
+  ptr -= REDZONE_SIZE;
+  int ret = munmap(ptr, poison_size);
+  if (ret == 0) {
+    ASAN_POISON_MEMORY_REGION(ptr, poison_size);
+  }
+  errno = olderr;
+  return ret;
+#else
   int olderr = errno;
   int ret = munmap(ptr, size);
   errno = olderr;
   return ret;
+#endif
 }
 
 #if LJ_ALLOC_MREMAP
 /* Need to define _GNU_SOURCE to get the mremap prototype. */
 static void *CALL_MREMAP_(void *ptr, size_t osz, size_t nsz, int flags)
 {
+#if LUAJIT_USE_ASAN
+  int olderr = errno;
+  size_t old_poison_size = asan_get_poison_size(ptr);
+
+  size_t new_mem_size = nsz;
+  nsz = (size_t)align_up((void *)nsz, SIZE_ALIGNMENT) + FREDZONE_SIZE;
+
+  void *new_ptr = mremap(ptr - REDZONE_SIZE, old_poison_size, nsz, flags);
+  errno = olderr;
+  if (new_ptr != MAP_FAILED) {
+    /* can return a pointer to the same memory */
+    ASAN_POISON_MEMORY_REGION(ptr - REDZONE_SIZE, old_poison_size);
+    return asan_memory_region(new_ptr, new_mem_size, nsz);
+  }
+  return ptr;
+#else
   int olderr = errno;
   ptr = mremap(ptr, osz, nsz, flags);
   errno = olderr;
   return ptr;
+#endif
 }
 
 #define CALL_MREMAP(addr, osz, nsz, mv) CALL_MREMAP_((addr), (osz), (nsz), (mv))
