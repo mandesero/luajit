@@ -224,7 +224,19 @@ static int CALL_MUNMAP(void *ptr, size_t size)
 #define LJ_ALLOC_MMAP_PROBE_MAX		30
 #define LJ_ALLOC_MMAP_PROBE_LINEAR	5
 
+/**
+ * || `[0x10007fff8000, 0x7fffffffffff]` || HighMem    || <--
+ * || `[0x02008fff7000, 0x10007fff7fff]` || HighShadow ||
+ * || `[0x00008fff7000, 0x02008fff6fff]` || ShadowGap  ||
+ * || `[0x00007fff8000, 0x00008fff6fff]` || LowShadow  ||
+ * || `[0x000000000000, 0x00007fff7fff]` || LowMem     ||
+ */
+
+#if LUAJIT_USE_ASAN
+#define LJ_ALLOC_MMAP_PROBE_LOWER	((uintptr_t)0x10007fff8000)
+#else
 #define LJ_ALLOC_MMAP_PROBE_LOWER	((uintptr_t)0x4000)
+#endif
 
 /* No point in a giant ifdef mess. Just try to open /dev/urandom.
 ** It doesn't really matter if this fails, since we get some ASLR bits from
@@ -325,6 +337,9 @@ static uintptr_t mmap_probe_seed(void)
   return 1;  /* Punt. */
 }
 
+#include <stdio.h>
+#include <stdlib.h>
+
 static void *mmap_probe(size_t size)
 {
   /* Hint for next allocation. Doesn't need to be thread-safe. */
@@ -344,6 +359,7 @@ static void *mmap_probe(size_t size)
       /* We got a suitable address. Bump the hint address. */
       hint_addr = addr + size;
       errno = olderr;
+      fprintf(stderr, "MMAP PTR: %p\n", p);
 #if LUAJIT_USE_ASAN
       p = mark_memory_region(p, mem_size, size);
 #endif
@@ -485,6 +501,17 @@ static int CALL_MUNMAP(void *ptr, size_t size)
 static void *CALL_MREMAP_(void *ptr, size_t osz, size_t nsz, int flags)
 {
   int olderr = errno;
+#if LUAJIT_USE_ASAN && !(LJ_64 && (!LJ_GC64 || LJ_TARGET_ARM64))
+  void *new_ptr = mmap_probe(nsz);
+  if (new_ptr != MFAIL) {
+    size_t oms = asan_get_size(ptr, MEM_SIZE);
+    size_t ops = asan_get_size(ptr, POISON_SIZE);
+    memcpy(new_ptr, ptr, oms);
+    ASAN_POISON_MEMORY_REGION(ptr - REDZONE_SIZE, ops);
+    ptr = new_ptr;
+  }
+#else
+
 #if LUAJIT_USE_ASAN
   void *old_ptr = ptr;
   size_t nms = nsz; /* new memory size */
@@ -496,9 +523,10 @@ static void *CALL_MREMAP_(void *ptr, size_t osz, size_t nsz, int flags)
 #if LUAJIT_USE_ASAN
   if (ptr != MFAIL) { 
     /* can return a pointer to the same memory */
-    ASAN_POISON_MEMORY_REGION(old_ptr, osz);
+    ASAN_POISON_MEMORY_REGION(old_ptr - REDZONE_SIZE, osz);
     ptr = mark_memory_region(ptr, nms, nsz);
   }
+#endif
 #endif
   errno = olderr;
   return ptr;
